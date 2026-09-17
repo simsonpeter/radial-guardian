@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jayathasoft.radialguardian",
+      "sha256_cert_fingerprints": [
+        "A4:C7:0D:3C:DA:05:FD:ED:45:87:8C:16:77:CE:CD:CC:67:D1:75:EC:61:3F:5C:0A:CD:59:FF:59:E4:17:A6:3F",
+        "34:11:9D:69:DD:B6:77:40:0C:4E:5A:41:84:D3:52:40:DE:34:0A:B2:E5:97:9B:2A:EF:77:29:CB:BC:13:8B:01"
+      ]
+    }
+  }
+]

@@ -45,7 +45,7 @@ High score is stored in `localStorage`.
 
 ## Ads
 
-Rewarded ads restore shield energy after a wipe: **90%**, then **80%**, **70%**, … down to **10%** (nine continues). After that the player must restart. Ads are optional. With `ADS.client` empty in `js/config.js`, the game uses a local preview overlay. Set it to your Google AdSense publisher ID (`ca-pub-…`) to serve live [H5 Games ads](https://developers.google.com/ad-placement).
+Rewarded ads restore shield energy after a wipe: **90%**, then **80%**, **70%**, … down to **10%** (nine continues). After that the player must restart. Ads are optional. After each continue, inbound fire stays at an easy pace for **10 seconds**, then ramps back to the current stage. Live ads use Google AdSense publisher `ca-pub-4849617394027497` via the [H5 Games Ad Placement API](https://developers.google.com/ad-placement). `ads.txt` must stay at the site root.
 
 ## Project layout
 
@@ -62,5 +62,47 @@ js/audio.js       Web Audio SFX
 js/input.js       mouse, keyboard, touch
 js/ui.js          HUD and menus
 js/ads.js         rewarded continue ads
+js/splash.js      boot splash
 js/utils.js       math helpers
+icons/            app logo sizes
+android/          Bubblewrap TWA project
 ```
+
+## Splash
+
+On launch, a 5-second splash shows the Radial Guardian logo, **by Jayathasoft**, and a neon loading bar from 0% to 100%.
+
+## Android APK (Bubblewrap)
+
+This repo is a PWA. Bubblewrap wraps it as a Trusted Web Activity.
+
+1. The PWA is hosted at [https://radial-guardian.vercel.app/](https://radial-guardian.vercel.app/).
+2. Serve locally and regenerate the Android project if icons change:
+
+```bash
+python -m http.server 43127
+cd android
+npm install
+node generate.mjs
+```
+
+3. Build a debug APK (installable for testing):
+
+```bash
+cd android
+set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
+gradlew.bat assembleDebug
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+Play Store upload files (signed with the local upload key):
+
+- `dist/RadialGuardian-release.aab` — upload this in Play Console
+- `dist/RadialGuardian-release.apk` — sideload / other stores
+
+Keep `android/upload-keystore.jks` and `android/keystore.properties` backed up. Losing them means you cannot update the app with the same signing key.
+
+Fullscreen (no URL bar) needs Digital Asset Links at `/.well-known/assetlinks.json` on the live site. After Play App Signing is enabled, add Play Console’s **App signing key certificate** SHA-256 to that file and redeploy.
+
+For a Play Store release, create a signing keystore and run `npx bubblewrap build` from `android/` after `sdkmanager` is on your PATH.

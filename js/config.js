@@ -37,13 +37,17 @@ export const GAME = {
  * https://developers.google.com/ad-placement
  */
 export const ADS = {
-  client: "",
+  client: "ca-pub-4849617394027497",
   /** First continue restores this much energy, then each later ad drops by `energyRestoreStep`. */
   energyRestoreStart: 90,
   energyRestoreStep: 10,
   /** Last allowed continue. After this, ads stop and the player must quit or restart. */
   energyRestoreMin: 10,
   previewDuration: 5,
+  /** After a rewarded continue, inbound fire stays easy for this long. */
+  graceDuration: 10,
+  /** Last seconds of grace ease back to the current stage speed. */
+  graceRamp: 3.5,
 };
 
 export function continueEnergy(continuesUsed) {

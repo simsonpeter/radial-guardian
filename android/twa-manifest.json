@@ -1,0 +1,53 @@
+{
+  "packageId": "com.jayathasoft.radialguardian",
+  "host": "radial-guardian.vercel.app",
+  "name": "Radial Guardian",
+  "launcherName": "Radial Guardian",
+  "display": "standalone",
+  "themeColor": "#050814",
+  "themeColorDark": "#050814",
+  "navigationColor": "#050814",
+  "navigationColorDark": "#050814",
+  "navigationDividerColor": "#050814",
+  "navigationDividerColorDark": "#050814",
+  "backgroundColor": "#050814",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "http://localhost:43127/icons/icon-512.png",
+  "maskableIconUrl": "http://localhost:43127/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersion": "1",
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://radial-guardian.vercel.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://radial-guardian.vercel.app/",
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fingerprints": [
+    {
+      "name": "android-debug",
+      "value": "A4:C7:0D:3C:DA:05:FD:ED:45:87:8C:16:77:CE:CD:CC:67:D1:75:EC:61:3F:5C:0A:CD:59:FF:59:E4:17:A6:3F"
+    },
+    {
+      "name": "play-upload",
+      "value": "34:11:9D:69:DD:B6:77:40:0C:4E:5A:41:84:D3:52:40:DE:34:0A:B2:E5:97:9B:2A:EF:77:29:CB:BC:13:8B:01"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": []
+}

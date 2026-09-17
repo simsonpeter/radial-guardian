@@ -9,9 +9,10 @@
     <meta name="theme-color" content="#050814" />
     <meta
       name="description"
-      content="RADIAL DEFENSE — a neon arcade game. Rotate a shield around the core, deflect inbound energy, and chain same-color reactions."
+      content="RADIAL GUARDIAN — a neon arcade game. Rotate a shield around the core, deflect inbound energy, and chain same-color reactions."
     />
-    <title>RADIAL DEFENSE</title>
+    <title>RADIAL GUARDIAN</title>
+    <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,14 +20,26 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%23050814' width='64' height='64'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%2300f3ff'/%3E%3Cpath d='M32 8 A24 24 0 0 1 54.6 20' stroke='%2300f3ff' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
-    />
+    <link rel="icon" href="icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
   </head>
-  <body>
+  <body class="is-booting">
     <div id="app">
-      <canvas id="game" aria-label="Radial Defense arena"></canvas>
+      <section id="screen-splash" class="splash" aria-live="polite">
+        <img class="splash-logo" src="assets/logo.png" alt="Radial Guardian" />
+        <p class="splash-by">by Jayathasoft</p>
+        <div class="splash-load">
+          <div class="splash-load-meta">
+            <span>INITIALIZING CORE</span>
+            <span id="splash-pct">0%</span>
+          </div>
+          <div class="splash-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Loading">
+            <div id="splash-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <canvas id="game" aria-label="Radial Guardian arena"></canvas>
 
       <header id="hud" class="hud hidden">
         <div class="hud-panel hud-left">
@@ -68,12 +81,14 @@
 
       <section id="screen-start" class="screen">
         <div class="panel">
+          <img class="start-logo" src="assets/logo.png" alt="Radial Guardian" />
           <p class="eyebrow">ORBITAL INTERDICTION PROTOCOL</p>
-          <h1>RADIAL DEFENSE</h1>
+          <h1>RADIAL GUARDIAN</h1>
           <p class="subtitle">
             One shield. Three hundred sixty degrees of inbound fire. Hold the core.
           </p>
           <button id="btn-play" class="primary-btn" type="button">PLAY</button>
+          <p class="byline">by Jayathasoft</p>
           <p class="highscore">HIGH SCORE <span data-highscore>0</span></p>
           <div class="controls-grid">
             <div>

@@ -3,6 +3,7 @@
  */
 
 import {
+  ADS,
   canContinueFromAd,
   continueEnergy,
   computeLayout,
@@ -19,7 +20,7 @@ import {
 import { ParticleSystem } from "./particles.js";
 import { ProjectilePool } from "./projectile.js";
 import { Shield } from "./player.js";
-import { formatScore, hypot2, rand, randChoice } from "./utils.js";
+import { formatScore, hypot2, lerp, rand, randChoice } from "./utils.js";
 
 export const STATES = {
   START: "start",
@@ -65,6 +66,7 @@ export class Game {
     this._warnLatch = false;
     this._adPending = false;
     this.continuesUsed = 0;
+    this.graceTimer = 0;
     this.dpr = 1;
     this._buildBackdrop();
   }
@@ -144,6 +146,7 @@ export class Game {
     this._warnLatch = false;
     this._adPending = false;
     this.continuesUsed = 0;
+    this.graceTimer = 0;
     this.state = STATES.PLAYING;
     this.audio.unlock();
     this.ui.showPlaying();
@@ -218,6 +221,8 @@ export class Game {
     this.flash = 0.35;
     this.corePulse = 1;
     this.hitStop = 0;
+    this.graceTimer = ADS.graceDuration;
+    this.spawnTimer = 1.35;
     for (const p of this.projectiles.items) {
       if (p.alive && !p.deflected) p.kill();
     }
@@ -234,7 +239,7 @@ export class Game {
       burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
       comboPop: false,
     });
-    this.ui.toastMessage(`CORE RESTORED — ${Math.round(energy)}%`);
+    this.ui.toastMessage(`CORE RESTORED — ${Math.round(energy)}% · 10s RECOVERY`);
   }
 
   loop = (ts) => {
@@ -286,12 +291,26 @@ export class Game {
 
   currentSpeed() {
     const extra = (this.stage - 1) * DIFFICULTY.stageSpeedStep;
-    return Math.min(DIFFICULTY.maxSpeed, DIFFICULTY.baseSpeed + extra);
+    const full = Math.min(DIFFICULTY.maxSpeed, DIFFICULTY.baseSpeed + extra);
+    return lerp(full, DIFFICULTY.baseSpeed, this._graceFactor());
   }
 
   currentSpawn() {
     const extra = (this.stage - 1) * DIFFICULTY.stageSpawnStep;
-    return Math.max(DIFFICULTY.minSpawn, DIFFICULTY.baseSpawn - extra);
+    const full = Math.max(DIFFICULTY.minSpawn, DIFFICULTY.baseSpawn - extra);
+    return lerp(full, DIFFICULTY.baseSpawn, this._graceFactor());
+  }
+
+  _graceFactor() {
+    if (this.graceTimer <= 0) return 0;
+    const ramp = ADS.graceRamp;
+    if (this.graceTimer > ramp) return 1;
+    const x = this.graceTimer / ramp;
+    return x * x * (3 - 2 * x);
+  }
+
+  _spawnStage() {
+    return Math.max(1, Math.round(lerp(this.stage, 1, this._graceFactor())));
   }
 
   update(dt) {
@@ -307,6 +326,7 @@ export class Game {
     this.corePulse = Math.max(0, this.corePulse - dt * 2.2);
     this.comboAnim = Math.max(0, this.comboAnim - dt * 2.5);
     this.coreUnstable = 1 - this.shield.energyNorm;
+    this.graceTimer = Math.max(0, this.graceTimer - dt);
 
     const nextStage = Math.min(GAME.maxStage, 1 + Math.floor(this.time / GAME.stageInterval));
     if (nextStage !== this.stage) {
@@ -356,11 +376,12 @@ export class Game {
   }
 
   _spawnWave() {
-    const colors = colorsForStage(this.stage);
-    const count = this._spawnCount();
-    const pattern = this._pickPattern();
+    const stage = this._spawnStage();
+    const colors = colorsForStage(stage);
+    const count = this._spawnCount(stage);
+    const pattern = this._pickPattern(stage);
     if (pattern === "ring") {
-      const n = 6 + (this.stage >= 6 ? 2 : 0);
+      const n = 6 + (stage >= 6 ? 2 : 0);
       const offset = rand(0, Math.PI * 2);
       for (let i = 0; i < n; i++) this._spawnOne(colors, "straight", offset + (i / n) * Math.PI * 2);
       this.audio.spawn();
@@ -380,19 +401,19 @@ export class Game {
     this.audio.spawn();
   }
 
-  _spawnCount() {
-    if (this.stage <= 1) return 1;
-    if (this.stage === 2) return Math.random() < 0.25 ? 2 : 1;
-    if (this.stage === 3) return Math.random() < 0.45 ? 2 : 1;
-    if (this.stage === 4) return Math.random() < 0.4 ? 3 : 2;
+  _spawnCount(stage = this.stage) {
+    if (stage <= 1) return 1;
+    if (stage === 2) return Math.random() < 0.25 ? 2 : 1;
+    if (stage === 3) return Math.random() < 0.45 ? 2 : 1;
+    if (stage === 4) return Math.random() < 0.4 ? 3 : 2;
     return Math.random() < 0.35 ? 4 : 3;
   }
 
-  _pickPattern() {
-    if (this.stage <= 1) return "straight";
-    if (this.stage === 2) return Math.random() < 0.12 ? "volley" : "straight";
-    if (this.stage === 3) return Math.random() < 0.22 ? "volley" : "straight";
-    if (this.stage === 4) {
+  _pickPattern(stage = this.stage) {
+    if (stage <= 1) return "straight";
+    if (stage === 2) return Math.random() < 0.12 ? "volley" : "straight";
+    if (stage === 3) return Math.random() < 0.22 ? "volley" : "straight";
+    if (stage === 4) {
       const r = Math.random();
       if (r < 0.28) return "spiral";
       if (r < 0.48) return "volley";
@@ -407,7 +428,7 @@ export class Game {
 
   _spawnOne(colors, pattern, forcedAngle) {
     const { cx, cy, spawnRadius, projectileRadius, eliteRadius, arena } = this.layout;
-    const elite = this.stage >= 5 && Math.random() < 0.08;
+    const elite = this._spawnStage() >= 5 && Math.random() < 0.08;
     const ang = forcedAngle != null ? forcedAngle : rand(0, Math.PI * 2);
     const x = cx + Math.cos(ang) * spawnRadius;
     const y = cy + Math.sin(ang) * spawnRadius;
