@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#050814" />
+    <meta
+      name="description"
+      content="RADIAL DEFENSE — a neon arcade game. Rotate a shield around the core, deflect inbound energy, and chain same-color reactions."
+    />
+    <title>RADIAL DEFENSE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%23050814' width='64' height='64'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%2300f3ff'/%3E%3Cpath d='M32 8 A24 24 0 0 1 54.6 20' stroke='%2300f3ff' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game" aria-label="Radial Defense arena"></canvas>
+
+      <header id="hud" class="hud hidden">
+        <div class="hud-panel hud-left">
+          <span class="hud-kicker">SCORE</span>
+          <strong id="hud-score">0</strong>
+        </div>
+        <div class="hud-panel hud-center">
+          <strong id="hud-combo" class="combo">COMBO ×1</strong>
+        </div>
+        <div class="hud-panel hud-right">
+          <span class="hud-kicker">TIME</span>
+          <strong id="hud-time">00:00</strong>
+        </div>
+        <div class="hud-bottom">
+          <div class="energy-wrap">
+            <div class="energy-meta">
+              <span>SHIELD ENERGY</span>
+              <span id="hud-energy-value">100%</span>
+            </div>
+            <div class="energy-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Shield energy">
+              <div id="hud-energy-fill"></div>
+            </div>
+          </div>
+          <div id="hud-stage" class="stage-chip">STAGE 1</div>
+        </div>
+      </header>
+
+      <button id="mute-btn" class="ghost-btn mute-btn" type="button" aria-pressed="false">
+        SOUND ON
+      </button>
+
+      <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield burst">
+        <span id="burst-cd"></span>
+        <strong>BURST</strong>
+        <small>SPACE</small>
+      </button>
+
+      <div id="toast" class="toast" role="status"></div>
+
+      <section id="screen-start" class="screen">
+        <div class="panel">
+          <p class="eyebrow">ORBITAL INTERDICTION PROTOCOL</p>
+          <h1>RADIAL DEFENSE</h1>
+          <p class="subtitle">
+            One shield. Three hundred sixty degrees of inbound fire. Hold the core.
+          </p>
+          <button id="btn-play" class="primary-btn" type="button">PLAY</button>
+          <p class="highscore">HIGH SCORE <span data-highscore>0</span></p>
+          <div class="controls-grid">
+            <div>
+              <h2>DESKTOP</h2>
+              <p>Mouse aims the shield</p>
+              <p>LEFT / RIGHT or A / D rotate</p>
+              <p>SPACE — shield burst</p>
+              <p>ESC / P — pause</p>
+            </div>
+            <div>
+              <h2>MOBILE</h2>
+              <p>Drag around the core</p>
+              <p>BURST button for special</p>
+            </div>
+          </div>
+          <div class="settings">
+            <label>
+              Volume
+              <input id="volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+            </label>
+            <label class="check">
+              <input id="reduced-motion" type="checkbox" />
+              Reduced motion
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-pause" class="screen hidden">
+        <div class="panel">
+          <h1>PAUSED</h1>
+          <p class="subtitle">The core is still humming. The inbound fire is not.</p>
+          <div class="actions">
+            <button id="btn-continue" class="primary-btn" type="button">CONTINUE</button>
+            <button id="btn-restart" class="secondary-btn" type="button">RESTART</button>
+            <button id="btn-pause-menu" class="ghost-btn" type="button">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-over" class="screen hidden">
+        <div class="panel">
+          <h1>GAME OVER</h1>
+          <p class="subtitle">The core destabilized. The grid went dark.</p>
+          <ul class="stats">
+            <li><span>FINAL SCORE</span><strong id="over-score">0</strong></li>
+            <li><span>BEST SCORE</span><strong id="over-best">0</strong></li>
+            <li><span>SURVIVAL</span><strong id="over-time">00:00</strong></li>
+            <li><span>DEFLECTIONS</span><strong id="over-deflects">0</strong></li>
+            <li><span>CHAIN REACTIONS</span><strong id="over-chains">0</strong></li>
+          </ul>
+          <div class="actions">
+            <button id="btn-again" class="primary-btn" type="button">PLAY AGAIN</button>
+            <button id="btn-over-menu" class="ghost-btn" type="button">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
