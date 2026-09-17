@@ -3,6 +3,7 @@
  */
 
 import {
+  ADS,
   computeLayout,
   colorsForStage,
   DIFFICULTY,
@@ -24,15 +25,17 @@ export const STATES = {
   PLAYING: "playing",
   PAUSED: "paused",
   OVER: "over",
+  AD: "ad",
 };
 
 export class Game {
-  constructor(canvas, { audio, ui, input }) {
+  constructor(canvas, { audio, ui, input, ads }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { alpha: false });
     this.audio = audio;
     this.ui = ui;
     this.input = input;
+    this.ads = ads;
     this.layout = computeLayout(window.innerWidth, window.innerHeight);
     this.shield = new Shield();
     this.projectiles = new ProjectilePool(PROJECTILE.maxAlive);
@@ -59,6 +62,8 @@ export class Game {
     this.sweep = 0;
     this.comboAnim = 0;
     this._warnLatch = false;
+    this._adPending = false;
+    this.continuesUsed = 0;
     this.dpr = 1;
     this._buildBackdrop();
   }
@@ -73,6 +78,7 @@ export class Game {
     this.ui.onBurst = () => {
       if (this.state === STATES.PLAYING) this.tryBurst();
     };
+    this.ui.onContinueAd = () => this.watchAdForContinue();
     this.ui.setHighScore(this.best);
     this.ui.showScreen("start");
     this.lastTs = performance.now();
@@ -135,6 +141,8 @@ export class Game {
     this.corePulse = 1;
     this.coreUnstable = 0;
     this._warnLatch = false;
+    this._adPending = false;
+    this.continuesUsed = 0;
     this.state = STATES.PLAYING;
     this.audio.unlock();
     this.ui.showPlaying();
@@ -167,7 +175,65 @@ export class Game {
       time: this.time,
       deflections: this.deflections,
       chains: this.chains,
+      canContinue: this.continuesUsed < ADS.continuePerRun,
     });
+  }
+
+  async watchAdForContinue() {
+    if (this.state !== STATES.OVER || this._adPending) return;
+    if (this.continuesUsed >= ADS.continuePerRun) return;
+    this._adPending = true;
+    this.state = STATES.AD;
+    this.ui.setContinueBusy(true);
+    this.ui.dimForAd();
+    const rewarded = await this.ads.showRewarded();
+    this._adPending = false;
+    this.ui.setContinueBusy(false);
+    if (rewarded) {
+      this.continueRun();
+      return;
+    }
+    this.state = STATES.OVER;
+    this.ui.showGameOver({
+      score: this.score,
+      best: this.best,
+      time: this.time,
+      deflections: this.deflections,
+      chains: this.chains,
+      canContinue: this.continuesUsed < ADS.continuePerRun,
+    });
+    this.ui.toastMessage("NO REWARD — AD NOT COMPLETED");
+  }
+
+  continueRun() {
+    this.continuesUsed += 1;
+    this.shield.energy = ADS.energyRestore;
+    this.shield.warnFlash = 0;
+    this.shield.burstCooldown = 0;
+    this._warnLatch = false;
+    this.combo = 1;
+    this.comboTimer = 0;
+    this.shake = 0;
+    this.flash = 0.35;
+    this.corePulse = 1;
+    this.hitStop = 0;
+    for (const p of this.projectiles.items) {
+      if (p.alive && !p.deflected) p.kill();
+    }
+    this.state = STATES.PLAYING;
+    this.lastTs = performance.now();
+    this.audio.restore();
+    this.ui.showPlaying();
+    this.ui.updateHud({
+      score: this.score,
+      time: this.time,
+      combo: this.combo,
+      energy: this.shield.energy,
+      stageLabel: stageLabel(this.stage),
+      burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
+      comboPop: false,
+    });
+    this.ui.toastMessage("CORE RESTORED — HOLD THE LINE");
   }
 
   loop = (ts) => {
@@ -181,7 +247,11 @@ export class Game {
       else if (this.input.consumeBurst()) this.tryBurst();
       this.update(dt);
     } else {
-      if (this.input.consumeConfirm()) {
+      if (this.state === STATES.AD) {
+        this.input.consumeConfirm();
+        this.input.consumeBurst();
+        this.input.consumePause();
+      } else if (this.input.consumeConfirm()) {
         if (this.state === STATES.START || this.state === STATES.OVER) this.startRun();
         else if (this.state === STATES.PAUSED) this.resume();
       }

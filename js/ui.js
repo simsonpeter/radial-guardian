@@ -3,7 +3,7 @@
  */
 
 import { formatScore, formatTime } from "./utils.js";
-import { STORAGE_KEYS } from "./config.js";
+import { ADS, STORAGE_KEYS } from "./config.js";
 
 export class UI {
   constructor(audio) {
@@ -33,6 +33,8 @@ export class UI {
     this.onRestart = null;
     this.onMenu = null;
     this.onBurst = null;
+    this.onContinueAd = null;
+    this.onMuteChange = null;
     this.reducedMotion = storageGet(STORAGE_KEYS.reducedMotion) === "1";
 
     this._bind();
@@ -66,6 +68,11 @@ export class UI {
       this.audio.click();
       this.onMenu?.();
     });
+    document.getElementById("btn-continue-ad").addEventListener("click", () => {
+      this.audio.unlock();
+      this.audio.click();
+      this.onContinueAd?.();
+    });
     this.burstBtn.addEventListener("click", (e) => {
       e.preventDefault();
       this.audio.unlock();
@@ -77,6 +84,7 @@ export class UI {
       this.audio.click();
       this.syncAudioControls();
       this.muteBtn.setAttribute("aria-pressed", muted ? "true" : "false");
+      this.onMuteChange?.(muted);
     });
     this.volume.addEventListener("input", () => {
       this.audio.unlock();
@@ -154,7 +162,31 @@ export class UI {
     document.getElementById("over-deflects").textContent = String(stats.deflections);
     document.getElementById("over-chains").textContent = String(stats.chains);
     this.setHighScore(stats.best);
+    const canContinue = Boolean(stats.canContinue);
+    const continueBtn = document.getElementById("btn-continue-ad");
+    const againBtn = document.getElementById("btn-again");
+    const hint = document.getElementById("ad-hint");
+    continueBtn.classList.toggle("hidden", !canContinue);
+    hint.classList.toggle("hidden", !canContinue);
+    hint.textContent = `Restore ${Math.round(ADS.energyRestore)}% shield energy and keep this run.`;
+    againBtn.classList.toggle("primary-btn", !canContinue);
+    againBtn.classList.toggle("secondary-btn", canContinue);
+    this.setContinueBusy(false);
     this.showScreen("over");
+  }
+
+  dimForAd() {
+    this.startScreen.classList.add("hidden");
+    this.pauseScreen.classList.add("hidden");
+    this.overScreen.classList.add("hidden");
+    this.hud.classList.add("hidden");
+    this.burstBtn.classList.add("hidden");
+  }
+
+  setContinueBusy(busy) {
+    const btn = document.getElementById("btn-continue-ad");
+    btn.disabled = busy;
+    btn.textContent = busy ? "LOADING AD…" : "WATCH AD · RESTORE CORE";
   }
 
   toastMessage(text) {

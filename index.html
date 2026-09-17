@@ -126,8 +126,27 @@
             <li><span>CHAIN REACTIONS</span><strong id="over-chains">0</strong></li>
           </ul>
           <div class="actions">
-            <button id="btn-again" class="primary-btn" type="button">PLAY AGAIN</button>
+            <button id="btn-continue-ad" class="primary-btn ad-btn" type="button">
+              WATCH AD · RESTORE CORE
+            </button>
+            <p id="ad-hint" class="ad-hint">Restore shield energy and keep this run.</p>
+            <button id="btn-again" class="secondary-btn" type="button">PLAY AGAIN</button>
             <button id="btn-over-menu" class="ghost-btn" type="button">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-ad" class="screen hidden" aria-live="polite" aria-modal="true">
+        <div class="panel ad-panel">
+          <p class="eyebrow">REWARDED AD</p>
+          <h1>RESTORE CORE</h1>
+          <p class="subtitle">Watch to refill shield energy and continue this run.</p>
+          <div class="ad-slot">
+            <div class="ad-slot-mark">AD</div>
+            <p id="ad-status">Preparing sponsored message…</p>
+            <div class="ad-bar" aria-hidden="true">
+              <div id="ad-progress-fill"></div>
+            </div>
           </div>
         </div>
       </section>

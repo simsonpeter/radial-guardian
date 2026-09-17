@@ -169,6 +169,12 @@ export class AudioEngine {
     });
   }
 
+  restore() {
+    this._osc("sine", 420, 0.12, 0.08, 0.004);
+    this._osc("sine", 660, 0.16, 0.08, 0.004);
+    this._osc("triangle", 880, 0.2, 0.07, 0.005);
+  }
+
   stageUp() {
     this._osc("sine", 520, 0.12, 0.08, 0.004);
     this._osc("sine", 780, 0.14, 0.07, 0.004);

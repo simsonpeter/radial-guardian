@@ -34,6 +34,7 @@ No build step, backend, or audio files are required.
 - Bolts that reach the core also drain shield energy.
 - Shield Burst briefly widens the arc and clears nearby inbound fire (cooldown).
 - Difficulty steps up every 15 seconds. The run ends when shield energy hits zero.
+- Once per run, **Watch Ad · Restore Core** on the game over screen refills shield energy so you can keep your score.
 
 High score is stored in `localStorage`.
 
@@ -41,6 +42,10 @@ High score is stored in `localStorage`.
 
 - Mute / volume on the start screen
 - Reduced motion (less shake, hit-stop, and particle density)
+
+## Ads
+
+Rewarded ads restore **55%** shield energy after a wipe (one continue per run). With `ADS.client` empty in `js/config.js`, the game uses a local preview overlay. Set it to your Google AdSense publisher ID (`ca-pub-…`) to serve live [H5 Games ads](https://developers.google.com/ad-placement).
 
 ## Project layout
 
@@ -56,5 +61,6 @@ js/particles.js   pooled sparks and floating scores
 js/audio.js       Web Audio SFX
 js/input.js       mouse, keyboard, touch
 js/ui.js          HUD and menus
+js/ads.js         rewarded continue ads
 js/utils.js       math helpers
 ```

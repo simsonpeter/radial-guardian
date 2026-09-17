@@ -1,10 +1,13 @@
 import { AudioEngine } from "./audio.js";
+import { AdService } from "./ads.js";
 import { Input } from "./input.js";
 import { UI } from "./ui.js";
 import { Game } from "./game.js";
 
 const canvas = document.getElementById("game");
 const audio = new AudioEngine();
+const ads = new AdService();
+ads.init({ muted: audio.muted });
 const ui = new UI(audio);
 const input = new Input(canvas, () => {
   const rect = canvas.getBoundingClientRect();
@@ -12,8 +15,9 @@ const input = new Input(canvas, () => {
 });
 input.attach();
 
-const game = new Game(canvas, { audio, ui, input });
+const game = new Game(canvas, { audio, ui, input, ads });
 game.init();
+ui.onMuteChange = (muted) => ads.setSound(!muted);
 window.RadialDefense = game;
 
 window.addEventListener("blur", () => {

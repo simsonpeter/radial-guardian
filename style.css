@@ -417,6 +417,77 @@ button.mute-btn {
   margin-top: 0;
 }
 
+.ad-btn {
+  background: linear-gradient(90deg, #ff2bd6, var(--cyan));
+  box-shadow: 0 0 24px rgba(255, 43, 214, 0.4);
+  color: #041018;
+}
+
+.ad-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  filter: none;
+}
+
+.ad-hint {
+  margin: 0 0 4px;
+  max-width: 34ch;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+#screen-ad {
+  z-index: 12;
+  background: radial-gradient(
+    circle at 50% 42%,
+    rgba(80, 0, 90, 0.22),
+    rgba(2, 4, 10, 0.78) 48%,
+    rgba(2, 3, 8, 0.86)
+  );
+}
+
+.ad-slot {
+  margin-top: 8px;
+  padding: 22px 18px 18px;
+  border-radius: 16px;
+  border: 1px dashed rgba(0, 243, 255, 0.35);
+  background: rgba(0, 20, 40, 0.45);
+}
+
+.ad-slot-mark {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--cyan);
+}
+
+#ad-status {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.ad-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+#ad-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff2bd6, var(--cyan));
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.55);
+}
+
 .highscore {
   margin: 18px 0 8px;
   font-family: var(--font-display);

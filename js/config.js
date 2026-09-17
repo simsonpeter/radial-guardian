@@ -30,6 +30,19 @@ export const GAME = {
   maxStage: 9,
 };
 
+/**
+ * Rewarded ads: watch to restore shield energy after a wipe.
+ * Leave `client` empty to preview a local rewarded overlay.
+ * Set `client` to a Google AdSense publisher ID (ca-pub-…) to serve live H5 ads.
+ * https://developers.google.com/ad-placement
+ */
+export const ADS = {
+  client: "",
+  continuePerRun: 1,
+  energyRestore: 55,
+  previewDuration: 5,
+};
+
 export const SCORE = {
   deflection: 10,
   chainBase: 25,
