@@ -3,7 +3,7 @@
  */
 
 import { formatScore, formatTime } from "./utils.js";
-import { ADS, STORAGE_KEYS } from "./config.js";
+import { STORAGE_KEYS } from "./config.js";
 
 export class UI {
   constructor(audio) {
@@ -163,14 +163,28 @@ export class UI {
     document.getElementById("over-chains").textContent = String(stats.chains);
     this.setHighScore(stats.best);
     const canContinue = Boolean(stats.canContinue);
+    const energy = Math.round(stats.energyRestore || 0);
+    this._continueEnergy = energy;
     const continueBtn = document.getElementById("btn-continue-ad");
     const againBtn = document.getElementById("btn-again");
     const hint = document.getElementById("ad-hint");
+    const subtitle = document.querySelector("#screen-over .subtitle");
     continueBtn.classList.toggle("hidden", !canContinue);
     hint.classList.toggle("hidden", !canContinue);
-    hint.textContent = `Restore ${Math.round(ADS.energyRestore)}% shield energy and keep this run.`;
     againBtn.classList.toggle("primary-btn", !canContinue);
     againBtn.classList.toggle("secondary-btn", canContinue);
+    if (canContinue) {
+      subtitle.textContent = "The core destabilized. Watch an ad to keep playing, or restart.";
+      if (energy <= 10) {
+        hint.textContent = `Last ad continue — restores ${energy}%. After this you must restart.`;
+      } else if (stats.continuesUsed) {
+        hint.textContent = `Optional — next ad restores ${energy}%. Each later ad is 10% less.`;
+      } else {
+        hint.textContent = `Optional — first ad restores ${energy}%, then 80%, 70%… down to 10%.`;
+      }
+    } else {
+      subtitle.textContent = "Ad continues are spent. Restart or return to the menu.";
+    }
     this.setContinueBusy(false);
     this.showScreen("over");
   }
@@ -186,7 +200,8 @@ export class UI {
   setContinueBusy(busy) {
     const btn = document.getElementById("btn-continue-ad");
     btn.disabled = busy;
-    btn.textContent = busy ? "LOADING AD…" : "WATCH AD · RESTORE CORE";
+    const pct = Math.round(this._continueEnergy || 90);
+    btn.textContent = busy ? "LOADING AD…" : `WATCH AD · +${pct}% ENERGY`;
   }
 
   toastMessage(text) {

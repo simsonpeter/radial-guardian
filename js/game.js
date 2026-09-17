@@ -3,7 +3,8 @@
  */
 
 import {
-  ADS,
+  canContinueFromAd,
+  continueEnergy,
   computeLayout,
   colorsForStage,
   DIFFICULTY,
@@ -169,19 +170,25 @@ export class Game {
       this.best = Math.floor(this.score);
       safeStorageSet(STORAGE_KEYS.highScore, String(this.best));
     }
-    this.ui.showGameOver({
+    this.ui.showGameOver(this._overStats());
+  }
+
+  _overStats() {
+    return {
       score: this.score,
       best: this.best,
       time: this.time,
       deflections: this.deflections,
       chains: this.chains,
-      canContinue: this.continuesUsed < ADS.continuePerRun,
-    });
+      continuesUsed: this.continuesUsed,
+      canContinue: canContinueFromAd(this.continuesUsed),
+      energyRestore: continueEnergy(this.continuesUsed),
+    };
   }
 
   async watchAdForContinue() {
     if (this.state !== STATES.OVER || this._adPending) return;
-    if (this.continuesUsed >= ADS.continuePerRun) return;
+    if (!canContinueFromAd(this.continuesUsed)) return;
     this._adPending = true;
     this.state = STATES.AD;
     this.ui.setContinueBusy(true);
@@ -194,20 +201,14 @@ export class Game {
       return;
     }
     this.state = STATES.OVER;
-    this.ui.showGameOver({
-      score: this.score,
-      best: this.best,
-      time: this.time,
-      deflections: this.deflections,
-      chains: this.chains,
-      canContinue: this.continuesUsed < ADS.continuePerRun,
-    });
+    this.ui.showGameOver(this._overStats());
     this.ui.toastMessage("NO REWARD — AD NOT COMPLETED");
   }
 
   continueRun() {
+    const energy = continueEnergy(this.continuesUsed);
     this.continuesUsed += 1;
-    this.shield.energy = ADS.energyRestore;
+    this.shield.energy = energy;
     this.shield.warnFlash = 0;
     this.shield.burstCooldown = 0;
     this._warnLatch = false;
@@ -233,7 +234,7 @@ export class Game {
       burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
       comboPop: false,
     });
-    this.ui.toastMessage("CORE RESTORED — HOLD THE LINE");
+    this.ui.toastMessage(`CORE RESTORED — ${Math.round(energy)}%`);
   }
 
   loop = (ts) => {

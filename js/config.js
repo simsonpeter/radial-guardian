@@ -38,10 +38,21 @@ export const GAME = {
  */
 export const ADS = {
   client: "",
-  continuePerRun: 1,
-  energyRestore: 55,
+  /** First continue restores this much energy, then each later ad drops by `energyRestoreStep`. */
+  energyRestoreStart: 90,
+  energyRestoreStep: 10,
+  /** Last allowed continue. After this, ads stop and the player must quit or restart. */
+  energyRestoreMin: 10,
   previewDuration: 5,
 };
+
+export function continueEnergy(continuesUsed) {
+  return ADS.energyRestoreStart - continuesUsed * ADS.energyRestoreStep;
+}
+
+export function canContinueFromAd(continuesUsed) {
+  return continueEnergy(continuesUsed) >= ADS.energyRestoreMin;
+}
 
 export const SCORE = {
   deflection: 10,
