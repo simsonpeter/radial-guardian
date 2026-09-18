@@ -5,12 +5,14 @@
 import {
   ADS,
   canContinueFromAd,
+  COINS,
   continueEnergy,
   computeLayout,
   colorsForStage,
   DIFFICULTY,
   ENERGY_COLORS,
   GAME,
+  packCost,
   PROJECTILE,
   SCORE,
   SHIELD,
@@ -20,6 +22,7 @@ import {
 import { ParticleSystem } from "./particles.js";
 import { ProjectilePool } from "./projectile.js";
 import { Shield } from "./player.js";
+import { Wallet } from "./wallet.js";
 import { formatScore, hypot2, lerp, rand, randChoice } from "./utils.js";
 
 export const STATES = {
@@ -38,6 +41,7 @@ export class Game {
     this.ui = ui;
     this.input = input;
     this.ads = ads;
+    this.wallet = new Wallet();
     this.layout = computeLayout(window.innerWidth, window.innerHeight);
     this.shield = new Shield();
     this.projectiles = new ProjectilePool(PROJECTILE.maxAlive);
@@ -66,6 +70,9 @@ export class Game {
     this._warnLatch = false;
     this._adPending = false;
     this.continuesUsed = 0;
+    this.repairsUsed = 0;
+    this.adHealsUsed = 0;
+    this.shopFrom = null;
     this.graceTimer = 0;
     this.dpr = 1;
     this._buildBackdrop();
@@ -82,7 +89,12 @@ export class Game {
       if (this.state === STATES.PLAYING) this.tryPower();
     };
     this.ui.onContinueAd = () => this.watchAdForContinue();
+    this.ui.onOpenShop = (from) => this.openShop(from);
+    this.ui.onShopBack = () => this.closeShop();
+    this.ui.onBuyPack = (id) => this.buyPack(id);
+    this.ui.onShopAd = () => this.watchAdForHeal();
     this.ui.setHighScore(this.best);
+    this.ui.setCoins(this.wallet.balance);
     this.ui.showScreen("start");
     this.lastTs = performance.now();
     this.loop(this.lastTs);
@@ -124,6 +136,7 @@ export class Game {
     this.particles.reset();
     this.ui.showScreen("start");
     this.ui.setHighScore(this.best);
+    this.ui.setCoins(this.wallet.balance);
   }
 
   startRun() {
@@ -146,12 +159,16 @@ export class Game {
     this._warnLatch = false;
     this._adPending = false;
     this.continuesUsed = 0;
+    this.repairsUsed = 0;
+    this.adHealsUsed = 0;
+    this.shopFrom = null;
     this.graceTimer = 0;
     this.state = STATES.PLAYING;
     this.audio.unlock();
     this.ui.showPlaying();
     this.ui.setSpeedLabel(this.input.speedLabel);
     this.ui.updateHud(this._hudStats(false));
+    this.ui.setCoins(this.wallet.balance);
     const touch = window.matchMedia("(pointer: coarse)").matches;
     this.ui.toastMessage(touch ? "HOLD SPEED — PRESS HARDER TO GO FASTER" : "STAGE 1 — HOLD THE CORE");
   }
@@ -189,6 +206,7 @@ export class Game {
       continuesUsed: this.continuesUsed,
       canContinue: canContinueFromAd(this.continuesUsed),
       energyRestore: continueEnergy(this.continuesUsed),
+      coins: this.wallet.balance,
     };
   }
 
@@ -211,10 +229,111 @@ export class Game {
     this.ui.toastMessage(this.ads.lastError || "NO AD AVAILABLE — TRY AGAIN");
   }
 
+  _shopStats() {
+    return {
+      coins: this.wallet.balance,
+      energy: this.shield.energy,
+      repairsUsed: this.repairsUsed,
+      adHealsUsed: this.adHealsUsed,
+      wiped: this.state === STATES.OVER || this.shopFrom === "over",
+    };
+  }
+
+  openShop(from) {
+    if (this._adPending) return;
+    if (from === "pause" && this.state !== STATES.PAUSED) return;
+    if (from === "over" && this.state !== STATES.OVER) return;
+    this.shopFrom = from;
+    this.ui.showShop(this._shopStats());
+  }
+
+  closeShop() {
+    if (this._adPending) return;
+    const from = this.shopFrom;
+    this.shopFrom = null;
+    if (from === "over" || this.state === STATES.OVER) {
+      this.ui.showGameOver(this._overStats());
+      return;
+    }
+    if (this.state === STATES.PAUSED) {
+      this.ui.showScreen("pause");
+      return;
+    }
+    if (this.state === STATES.PLAYING) this.ui.showPlaying();
+  }
+
+  buyPack(packId) {
+    const pack = COINS.packs.find((p) => p.id === packId);
+    if (!pack) return;
+    const fromOver = this.shopFrom === "over" || this.state === STATES.OVER;
+    if (!fromOver && this.shield.energy >= 100) {
+      this.ui.toastMessage("SHIELD ALREADY FULL");
+      return;
+    }
+    const cost = packCost(pack, this.repairsUsed);
+    if (!this.wallet.spend(cost)) {
+      this.ui.toastMessage(`NEED ${cost} COINS`);
+      this.ui.renderShop(this._shopStats());
+      return;
+    }
+    this.repairsUsed += 1;
+    this.audio.restore();
+    this.ui.setCoins(this.wallet.balance);
+    this._applyRepair(pack.energy, fromOver);
+  }
+
+  async watchAdForHeal() {
+    if (this._adPending) return;
+    const fromOver = this.shopFrom === "over" || this.state === STATES.OVER;
+    if (this.adHealsUsed >= COINS.adMaxPerRun) {
+      this.ui.toastMessage("NO AD REPAIRS LEFT THIS RUN");
+      return;
+    }
+    if (!fromOver && this.shield.energy >= 100) {
+      this.ui.toastMessage("SHIELD ALREADY FULL");
+      return;
+    }
+    this._adPending = true;
+    const prev = this.state;
+    this.state = STATES.AD;
+    this.ui.setShopBusy(true);
+    this.ui.dimForAd();
+    const rewarded = await this.ads.showRewarded();
+    this._adPending = false;
+    this.ui.setShopBusy(false);
+    if (rewarded) {
+      this.adHealsUsed += 1;
+      this.audio.restore();
+      this._applyRepair(COINS.adEnergy, fromOver);
+      return;
+    }
+    this.state = prev;
+    this.ui.showShop(this._shopStats());
+    this.ui.toastMessage(this.ads.lastError || "NO AD AVAILABLE — TRY AGAIN");
+  }
+
+  _applyRepair(energy, fromOver) {
+    if (fromOver) {
+      this.shopFrom = null;
+      this._resumeRun(Math.min(SHIELD.energyMax, energy));
+      return;
+    }
+    this.shield.heal(energy);
+    this.shield.warnFlash = 0;
+    this.state = STATES.PAUSED;
+    this.ui.showShop(this._shopStats());
+    this.ui.updateHud(this._hudStats(false));
+    this.ui.toastMessage(`SHIELD +${Math.round(energy)}%`);
+  }
+
   continueRun() {
     const energy = continueEnergy(this.continuesUsed);
     this.continuesUsed += 1;
-    this.shield.energy = energy;
+    this._resumeRun(energy);
+  }
+
+  _resumeRun(energy) {
+    this.shield.energy = Math.min(SHIELD.energyMax, Math.max(8, energy));
     this.shield.warnFlash = 0;
     this.shield.burstCooldown = 0;
     this.shield.growTimer = 0;
@@ -240,6 +359,13 @@ export class Game {
     this.ui.toastMessage(`CORE RESTORED — ${Math.round(energy)}% · 10s RECOVERY`);
   }
 
+  _grantCoins(amount) {
+    const gained = this.wallet.add(amount);
+    if (!gained) return;
+    if (gained >= 2) this.audio.coin();
+    this.ui.setCoins(this.wallet.balance);
+  }
+
   loop = (ts) => {
     this.raf = requestAnimationFrame(this.loop);
     let dt = (ts - this.lastTs) / 1000;
@@ -252,6 +378,10 @@ export class Game {
       this.update(dt);
     } else {
       if (this.state === STATES.AD) {
+        this.input.consumeConfirm();
+        this.input.consumeBurst();
+        this.input.consumePause();
+      } else if (this.shopFrom) {
         this.input.consumeConfirm();
         this.input.consumeBurst();
         this.input.consumePause();
@@ -346,6 +476,7 @@ export class Game {
       powerLabel: this.shield.nextPowerLabel,
       powerId: this.shield.nextPower,
       comboPop,
+      coins: this.wallet.balance,
     };
   }
 
@@ -391,6 +522,7 @@ export class Game {
     const nextStage = Math.min(GAME.maxStage, 1 + Math.floor(this.time / GAME.stageInterval));
     if (nextStage !== this.stage) {
       this.stage = nextStage;
+      this._grantCoins(COINS.stage);
       this.ui.toastMessage(`${stageLabel(this.stage)} — INBOUND DENSITY UP`);
       this.audio.stageUp();
     }
@@ -557,6 +689,7 @@ export class Game {
       size: 2.4,
     });
     this.particles.floatText(ix, iy, `+${SCORE.deflection}`, p.color.hex, 0.95);
+    this._grantCoins(p.elite ? COINS.deflection + COINS.elite : COINS.deflection);
   }
 
   _coreHit(p) {
@@ -614,6 +747,7 @@ export class Game {
     this.audio.deflect();
     this.particles.burst(mx, my, inbound.color, 0.95);
     this.particles.floatText(mx, my, `+${formatScore(pts)}`, inbound.color.hex, 0.95);
+    this._grantCoins(inbound.elite ? COINS.deflection + COINS.elite : COINS.deflection);
     inbound.kill();
     shot.hitLock = 0.04;
   }
@@ -640,6 +774,7 @@ export class Game {
     if (mul >= 2) this.audio.comboUp(mul);
     this.particles.burst(mx, my, a.color, 1.15 + Math.min(1.2, mul * 0.12));
     this.particles.floatText(mx, my, `+${formatScore(pts)}`, a.color.hex, 1.15 + Math.min(0.6, mul * 0.08));
+    this._grantCoins(a.elite || b.elite ? COINS.chain + COINS.elite : COINS.chain);
     b.kill();
     // Keep the deflected bolt alive so it can continue a chain reaction.
     a.hitLock = 0.05;

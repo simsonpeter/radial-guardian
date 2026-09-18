@@ -193,6 +193,16 @@ export class AudioEngine {
     this._osc("triangle", 880, 0.2, 0.07, 0.005);
   }
 
+  coin() {
+    this._osc("sine", 880, 0.07, 0.06, 0.002);
+    this._osc("triangle", 1320, 0.09, 0.04, 0.003);
+  }
+
+  spend() {
+    this._osc("square", 240, 0.08, 0.05, 0.003);
+    this._osc("sine", 360, 0.12, 0.05, 0.004);
+  }
+
   stageUp() {
     this._osc("sine", 520, 0.12, 0.08, 0.004);
     this._osc("sine", 780, 0.14, 0.07, 0.004);

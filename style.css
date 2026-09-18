@@ -199,6 +199,15 @@ body.is-booting .screen:not(.splash) {
   letter-spacing: 0.06em;
 }
 
+.hud-coins {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--yellow);
+}
+
 .combo {
   font-size: 22px !important;
   color: var(--cyan);
@@ -322,7 +331,7 @@ body.is-booting .screen:not(.splash) {
 #hud:not(.hidden) ~ .mute-btn {
   left: max(16px, env(safe-area-inset-left));
   right: auto;
-  top: calc(max(16px, env(safe-area-inset-top)) + 78px);
+  top: calc(max(16px, env(safe-area-inset-top)) + 102px);
 }
 
 #hud.hidden ~ .mute-btn {
@@ -706,6 +715,82 @@ button.mute-btn {
   color: var(--muted);
   font-size: 14px;
   letter-spacing: 0.04em;
+}
+
+.coin-bank {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  color: var(--yellow);
+}
+
+.shop-balance,
+.shop-energy {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.16em;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.shop-balance strong,
+.shop-energy strong {
+  color: var(--yellow);
+  margin-left: 8px;
+}
+
+.shop-energy strong {
+  color: var(--cyan);
+}
+
+.shop-packs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0 8px;
+  width: min(100%, 340px);
+}
+
+.shop-pack {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 12px;
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: var(--glass);
+  color: var(--text);
+  font-family: var(--font-display);
+  cursor: pointer;
+}
+
+.shop-pack-name {
+  letter-spacing: 0.18em;
+  font-size: 13px;
+}
+
+.shop-pack-energy {
+  grid-column: 1;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+}
+
+.shop-pack-cost {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--yellow);
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+
+.shop-pack:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 #screen-ad {

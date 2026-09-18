@@ -1,4 +1,4 @@
-const CACHE = "radial-guardian-v8";
+const CACHE = "radial-guardian-v9";
 const ASSETS = [
   "./",
   "./index.html",
@@ -18,6 +18,7 @@ const ASSETS = [
   "./js/input.js",
   "./js/ui.js",
   "./js/ads.js",
+  "./js/wallet.js",
   "./js/utils.js",
 ];
 

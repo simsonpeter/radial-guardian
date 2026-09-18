@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   muted: "radialDefense.muted",
   volume: "radialDefense.volume",
   reducedMotion: "radialDefense.reducedMotion",
+  coins: "radialDefense.coins",
 };
 
 export const ENERGY_COLORS = {
@@ -68,6 +69,30 @@ export const SCORE = {
   chainBase: 25,
   eliteBonus: 40,
 };
+
+/**
+ * Persistent coin wallet. Earn in combat, spend on shield repairs.
+ * Repair prices inflate during a run so continues stay costly.
+ * Ads remain an optional path that does not spend coins.
+ */
+export const COINS = {
+  deflection: 1,
+  chain: 2,
+  elite: 2,
+  stage: 15,
+  packs: [
+    { id: "patch", label: "PATCH", energy: 30, cost: 40 },
+    { id: "repair", label: "REPAIR", energy: 60, cost: 85 },
+    { id: "overhaul", label: "OVERHAUL", energy: 100, cost: 150 },
+  ],
+  runInflation: 0.45,
+  adEnergy: 40,
+  adMaxPerRun: 2,
+};
+
+export function packCost(pack, repairsUsed) {
+  return Math.round(pack.cost * (1 + repairsUsed * COINS.runInflation));
+}
 
 export const SHIELD = {
   energyMax: 100,
