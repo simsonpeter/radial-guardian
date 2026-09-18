@@ -83,7 +83,7 @@ export const SHIELD = {
   /** Touch swipe: radians per CSS pixel. Finger can stay on the bezel. */
   touchSteerPerPx: 0.016,
   /** SPEED hold: light press stays near 1x, harder press reaches this. */
-  steerMaxMul: 3.4,
+  steerMaxMul: 10,
   coreHitDamage: 9,
   eliteHitDamage: 16,
   mismatchDamage: 6,

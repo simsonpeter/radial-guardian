@@ -186,8 +186,8 @@ export class Input {
     if (this._speedBtn) {
       this._speedBtn.style.setProperty("--force", String(force));
       this._speedBtn.classList.toggle("is-held", this._speedId != null);
-      this._speedBtn.classList.toggle("is-fast", mul >= 1.8 && mul < 2.7);
-      this._speedBtn.classList.toggle("is-max", mul >= 2.7);
+      this._speedBtn.classList.toggle("is-fast", mul >= 4 && mul < 7.5);
+      this._speedBtn.classList.toggle("is-max", mul >= 7.5);
     }
     if (this._speedValue) this._speedValue.textContent = `x${mul.toFixed(1)}`;
   }
