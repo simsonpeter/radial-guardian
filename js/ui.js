@@ -20,6 +20,8 @@ export class UI {
     this.burstLabel = this.burstBtn.querySelector("strong");
     this.burstCd = document.getElementById("burst-cd");
     this.steerPad = document.getElementById("steer-pad");
+    this.speedBtn = document.getElementById("speed-btn");
+    this.speedValue = document.getElementById("speed-value");
     this.toast = document.getElementById("toast");
     this.startScreen = document.getElementById("screen-start");
     this.pauseScreen = document.getElementById("screen-pause");
@@ -35,6 +37,7 @@ export class UI {
     this.onRestart = null;
     this.onMenu = null;
     this.onBurst = null;
+    this.onSpeed = null;
     this.onContinueAd = null;
     this.onMuteChange = null;
     this.reducedMotion = storageGet(STORAGE_KEYS.reducedMotion) === "1";
@@ -79,6 +82,12 @@ export class UI {
       e.preventDefault();
       this.audio.unlock();
       this.onBurst?.();
+    });
+    this.speedBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.audio.unlock();
+      this.audio.click();
+      this.onSpeed?.();
     });
     this.muteBtn.addEventListener("click", () => {
       this.audio.unlock();
@@ -137,6 +146,14 @@ export class UI {
   _setCombatControls(visible) {
     this.burstBtn.classList.toggle("hidden", !visible);
     this.steerPad?.classList.toggle("hidden", !visible);
+    this.speedBtn?.classList.toggle("hidden", !visible);
+  }
+
+  setSpeedLabel(label) {
+    if (this.speedValue) this.speedValue.textContent = label;
+    this.speedBtn?.setAttribute("aria-label", `Spin speed ${label}`);
+    this.speedBtn?.classList.toggle("is-fast", label === "x2");
+    this.speedBtn?.classList.toggle("is-max", label === "x3");
   }
 
   showPlaying() {

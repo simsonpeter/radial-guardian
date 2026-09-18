@@ -3,7 +3,7 @@
  * Desktop: mouse aims the shield. Mobile: hold ◀ ▶ or swipe — no finger on the arena.
  */
 
-import { SHIELD } from "./config.js";
+import { SHIELD, STEER_SPEED_LABELS, STEER_SPEEDS, STORAGE_KEYS } from "./config.js";
 import { clamp, wrapAngle } from "./utils.js";
 
 export class Input {
@@ -19,6 +19,7 @@ export class Input {
     this.confirmQueued = false;
     this.steerHold = 0;
     this.steerYaw = 0;
+    this.speedIndex = loadSpeedIndex();
     this._lastPointerId = null;
     this._touchId = null;
     this._lastTouchX = 0;
@@ -100,6 +101,24 @@ export class Input {
     const yaw = this.steerYaw;
     this.steerYaw = 0;
     return yaw;
+  }
+
+  get speedMul() {
+    return STEER_SPEEDS[this.speedIndex] || 1;
+  }
+
+  get speedLabel() {
+    return STEER_SPEED_LABELS[this.speedIndex] || "x1";
+  }
+
+  cycleSpeed() {
+    this.speedIndex = (this.speedIndex + 1) % STEER_SPEEDS.length;
+    try {
+      localStorage.setItem(STORAGE_KEYS.steerSpeed, String(this.speedIndex));
+    } catch {
+      /* ignore */
+    }
+    return this.speedMul;
   }
 
   get aimingWithPointer() {
@@ -213,4 +232,14 @@ export class Input {
     if (this._lastPointerId === e.pointerId) this._lastPointerId = null;
     if (this._touchId === e.pointerId) this._touchId = null;
   }
+}
+
+function loadSpeedIndex() {
+  try {
+    const n = Number(localStorage.getItem(STORAGE_KEYS.steerSpeed));
+    if (Number.isInteger(n) && n >= 0 && n < STEER_SPEEDS.length) return n;
+  } catch {
+    /* ignore */
+  }
+  return 0;
 }

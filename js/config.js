@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   muted: "radialDefense.muted",
   volume: "radialDefense.volume",
   reducedMotion: "radialDefense.reducedMotion",
+  steerSpeed: "radialDefense.steerSpeed",
 };
 
 export const ENERGY_COLORS = {
@@ -100,6 +101,10 @@ export const SHIELD = {
   shotSpread: 0.42,
   shotSpeed: 1.05,
 };
+
+/** Multipliers for ◀ ▶ / swipe / SPIN. Tap SPEED to cycle. */
+export const STEER_SPEEDS = [1, 2, 3.2];
+export const STEER_SPEED_LABELS = ["x1", "x2", "x3"];
 
 export const POWERS = ["burst", "grow", "shot", "spin"];
 

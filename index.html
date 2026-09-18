@@ -19,7 +19,7 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css?v=4" />
+    <link rel="stylesheet" href="style.css?v=5" />
     <link rel="icon" href="icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script
@@ -88,6 +88,11 @@
         <button id="steer-right" class="steer-btn" type="button" aria-label="Rotate right">▶</button>
       </div>
 
+      <button id="speed-btn" class="speed-btn hidden" type="button" aria-label="Spin speed">
+        <strong>SPEED</strong>
+        <small id="speed-value">x1</small>
+      </button>
+
       <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield BURST">
         <span id="burst-cd"></span>
         <strong>BURST</strong>
@@ -118,7 +123,7 @@
             <div>
               <h2>MOBILE</h2>
               <p>HOLD ◀ ▶ at the bottom to spin — thumbs stay off the arena</p>
-              <p>Or swipe left / right at the edge</p>
+              <p>SPEED sets how fast the shield spins</p>
               <p>POWER button cycles specials</p>
             </div>
           </div>

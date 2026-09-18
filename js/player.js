@@ -137,14 +137,15 @@ export class Shield {
     this.warnFlash = Math.max(0, this.warnFlash - dt * 2.2);
 
     if (this.spinTimer > 0) {
-      this.angle = wrapAngle(this.angle + SHIELD.spinSpeed * dt);
+      this.angle = wrapAngle(this.angle + SHIELD.spinSpeed * input.speedMul * dt);
     } else {
       const rotate = input.rotateIntent();
+      const mul = input.speedMul;
       if (rotate !== 0) {
-        this.angle = wrapAngle(this.angle + rotate * SHIELD.rotateSpeed * dt);
+        this.angle = wrapAngle(this.angle + rotate * SHIELD.rotateSpeed * mul * dt);
       }
       const yaw = input.consumeSteerYaw();
-      if (yaw) this.angle = wrapAngle(this.angle + yaw);
+      if (yaw) this.angle = wrapAngle(this.angle + yaw * mul);
       if (input.aimingWithPointer) {
         const k = 1 - Math.exp(-SHIELD.pointerLerp * dt);
         this.angle = wrapAngle(this.angle + wrapAngle(input.pointerAngle - this.angle) * k);

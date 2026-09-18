@@ -393,6 +393,69 @@ body.is-booting .screen:not(.splash) {
   .steer-pad {
     display: flex;
   }
+
+  .speed-btn {
+    display: grid;
+  }
+}
+
+.speed-btn {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 7;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  border: 1px solid var(--stroke);
+  background: var(--glass);
+  color: var(--text);
+  font-family: var(--font-display);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  display: none;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.speed-btn.hidden {
+  display: none !important;
+}
+
+.speed-btn strong {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  position: relative;
+  z-index: 1;
+}
+
+.speed-btn small {
+  position: absolute;
+  bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  z-index: 1;
+}
+
+.speed-btn.is-fast {
+  border-color: var(--yellow);
+  box-shadow: 0 0 16px rgba(255, 225, 74, 0.28);
+}
+
+.speed-btn.is-max {
+  border-color: var(--magenta);
+  box-shadow: 0 0 18px rgba(255, 43, 214, 0.35);
+}
+
+.speed-btn.is-max small {
+  color: var(--magenta);
+}
+
+.speed-btn.is-fast small {
+  color: var(--yellow);
 }
 
 .burst-btn strong {
@@ -569,7 +632,8 @@ h1 {
 .secondary-btn:hover,
 .ghost-btn:hover,
 .burst-btn:hover,
-.steer-btn:hover {
+.steer-btn:hover,
+.speed-btn:hover {
   filter: brightness(1.12);
 }
 
@@ -578,6 +642,7 @@ h1 {
 .ghost-btn:focus-visible,
 .burst-btn:focus-visible,
 .steer-btn:focus-visible,
+.speed-btn:focus-visible,
 .settings input:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 3px;
@@ -806,6 +871,11 @@ button.mute-btn {
   }
 
   .steer-btn {
+    width: 64px;
+    height: 64px;
+  }
+
+  .speed-btn {
     width: 64px;
     height: 64px;
   }

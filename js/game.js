@@ -81,6 +81,12 @@ export class Game {
     this.ui.onBurst = () => {
       if (this.state === STATES.PLAYING) this.tryPower();
     };
+    this.ui.onSpeed = () => {
+      if (this.state !== STATES.PLAYING && this.state !== STATES.PAUSED) return;
+      this.input.cycleSpeed();
+      this.ui.setSpeedLabel(this.input.speedLabel);
+      this.ui.toastMessage(`SPIN SPEED ${this.input.speedLabel}`);
+    };
     this.ui.onContinueAd = () => this.watchAdForContinue();
     this.ui.setHighScore(this.best);
     this.ui.showScreen("start");
@@ -150,6 +156,7 @@ export class Game {
     this.state = STATES.PLAYING;
     this.audio.unlock();
     this.ui.showPlaying();
+    this.ui.setSpeedLabel(this.input.speedLabel);
     this.ui.updateHud(this._hudStats(false));
     const touch = window.matchMedia("(pointer: coarse)").matches;
     this.ui.toastMessage(touch ? "STAGE 1 — HOLD ◀ ▶ TO SPIN" : "STAGE 1 — HOLD THE CORE");
