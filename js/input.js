@@ -1,9 +1,10 @@
 /**
  * Unified pointer / keyboard / touch input.
- * Touch drags around the arena center set the shield angle.
+ * Desktop: mouse aims the shield. Mobile: hold ◀ ▶ or swipe — no finger on the arena.
  */
 
-import { wrapAngle } from "./utils.js";
+import { SHIELD } from "./config.js";
+import { clamp, wrapAngle } from "./utils.js";
 
 export class Input {
   constructor(canvas, getCenter) {
@@ -16,7 +17,12 @@ export class Input {
     this.burstQueued = false;
     this.pauseQueued = false;
     this.confirmQueued = false;
+    this.steerHold = 0;
+    this.steerYaw = 0;
     this._lastPointerId = null;
+    this._touchId = null;
+    this._lastTouchX = 0;
+    this._steerIds = new Map();
 
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
@@ -25,6 +31,8 @@ export class Input {
     this._onPointerUp = this._onPointerUp.bind(this);
     this._onContext = (e) => e.preventDefault();
     this._onTouchMove = this._onTouchMove.bind(this);
+    this._onSteerDown = this._onSteerDown.bind(this);
+    this._onSteerUp = this._onSteerUp.bind(this);
   }
 
   attach() {
@@ -38,6 +46,16 @@ export class Input {
     this.canvas.addEventListener("touchmove", this._onTouchMove, { passive: false });
     this.canvas.addEventListener("touchstart", this._onTouchMove, { passive: false });
     document.body.addEventListener("touchmove", this._preventScroll, { passive: false });
+
+    this._leftBtn = document.getElementById("steer-left");
+    this._rightBtn = document.getElementById("steer-right");
+    for (const btn of [this._leftBtn, this._rightBtn]) {
+      if (!btn) continue;
+      btn.addEventListener("pointerdown", this._onSteerDown);
+      btn.addEventListener("pointerup", this._onSteerUp);
+      btn.addEventListener("pointercancel", this._onSteerUp);
+      btn.addEventListener("lostpointercapture", this._onSteerUp);
+    }
   }
 
   detach() {
@@ -51,6 +69,13 @@ export class Input {
     this.canvas.removeEventListener("touchmove", this._onTouchMove);
     this.canvas.removeEventListener("touchstart", this._onTouchMove);
     document.body.removeEventListener("touchmove", this._preventScroll);
+    for (const btn of [this._leftBtn, this._rightBtn]) {
+      if (!btn) continue;
+      btn.removeEventListener("pointerdown", this._onSteerDown);
+      btn.removeEventListener("pointerup", this._onSteerUp);
+      btn.removeEventListener("pointercancel", this._onSteerUp);
+      btn.removeEventListener("lostpointercapture", this._onSteerUp);
+    }
   }
 
   consumeBurst() {
@@ -71,6 +96,12 @@ export class Input {
     return v;
   }
 
+  consumeSteerYaw() {
+    const yaw = this.steerYaw;
+    this.steerYaw = 0;
+    return yaw;
+  }
+
   get aimingWithPointer() {
     return this.pointerActive && performance.now() - this.pointerStamp < 280;
   }
@@ -79,7 +110,36 @@ export class Input {
     let dir = 0;
     if (this.keys.has("arrowleft") || this.keys.has("a")) dir -= 1;
     if (this.keys.has("arrowright") || this.keys.has("d")) dir += 1;
-    return dir;
+    dir += this.steerHold;
+    return clamp(dir, -1, 1);
+  }
+
+  _syncSteerHold() {
+    let dir = 0;
+    for (const v of this._steerIds.values()) dir += v;
+    this.steerHold = clamp(dir, -1, 1);
+    this._leftBtn?.classList.toggle("is-held", this.steerHold < 0);
+    this._rightBtn?.classList.toggle("is-held", this.steerHold > 0);
+  }
+
+  _onSteerDown(e) {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const dir = e.currentTarget.id === "steer-left" ? -1 : 1;
+    this._steerIds.set(e.pointerId, dir);
+    this._syncSteerHold();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  _onSteerUp(e) {
+    if (!this._steerIds.has(e.pointerId)) return;
+    this._steerIds.delete(e.pointerId);
+    this._syncSteerHold();
   }
 
   _preventScroll(e) {
@@ -118,9 +178,20 @@ export class Input {
   }
 
   _onPointerDown(e) {
-    if (e.target.closest && e.target.closest("button, input, .screen")) return;
+    if (e.target.closest && e.target.closest("button, input, .screen, .steer-pad")) return;
     this._lastPointerId = e.pointerId;
-    this._setAngleFromEvent(e);
+    if (e.pointerType === "mouse") {
+      this._setAngleFromEvent(e);
+      try {
+        this.canvas.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    this._touchId = e.pointerId;
+    this._lastTouchX = e.clientX;
+    this.pointerActive = false;
     try {
       this.canvas.setPointerCapture(e.pointerId);
     } catch {
@@ -133,12 +204,13 @@ export class Input {
       this._setAngleFromEvent(e);
       return;
     }
-    if (this._lastPointerId === e.pointerId) {
-      this._setAngleFromEvent(e);
-    }
+    if (this._touchId !== e.pointerId) return;
+    this.steerYaw += (e.clientX - this._lastTouchX) * SHIELD.touchSteerPerPx;
+    this._lastTouchX = e.clientX;
   }
 
   _onPointerUp(e) {
     if (this._lastPointerId === e.pointerId) this._lastPointerId = null;
+    if (this._touchId === e.pointerId) this._touchId = null;
   }
 }

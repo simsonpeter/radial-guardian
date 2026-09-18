@@ -19,9 +19,21 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=4" />
     <link rel="icon" href="icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <script
+      async
+      crossorigin="anonymous"
+      data-adbreak-test="on"
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4849617394027497"
+    ></script>
+    <script>
+      window.adsbygoogle = window.adsbygoogle || [];
+      window.adBreak = window.adConfig = function (o) {
+        window.adsbygoogle.push(o);
+      };
+    </script>
   </head>
   <body class="is-booting">
     <div id="app">
@@ -71,7 +83,12 @@
         SOUND ON
       </button>
 
-      <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield burst">
+      <div id="steer-pad" class="steer-pad hidden" aria-label="Shield rotate">
+        <button id="steer-left" class="steer-btn" type="button" aria-label="Rotate left">◀</button>
+        <button id="steer-right" class="steer-btn" type="button" aria-label="Rotate right">▶</button>
+      </div>
+
+      <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield BURST">
         <span id="burst-cd"></span>
         <strong>BURST</strong>
         <small>SPACE</small>
@@ -95,13 +112,14 @@
               <h2>DESKTOP</h2>
               <p>Mouse aims the shield</p>
               <p>LEFT / RIGHT or A / D rotate</p>
-              <p>SPACE — shield burst</p>
+              <p>SPACE — specials cycle BURST, GROW, SHOT, SPIN</p>
               <p>ESC / P — pause</p>
             </div>
             <div>
               <h2>MOBILE</h2>
-              <p>Drag around the core</p>
-              <p>BURST button for special</p>
+              <p>HOLD ◀ ▶ at the bottom to spin — thumbs stay off the arena</p>
+              <p>Or swipe left / right at the edge</p>
+              <p>POWER button cycles specials</p>
             </div>
           </div>
           <div class="settings">

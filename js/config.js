@@ -38,6 +38,11 @@ export const GAME = {
  */
 export const ADS = {
   client: "ca-pub-4849617394027497",
+  /**
+   * Google test rewarded ads. Set false after H5 Games ads are approved
+   * and start filling on the live site.
+   */
+  testAds: true,
   /** First continue restores this much energy, then each later ad drops by `energyRestoreStep`. */
   energyRestoreStart: 90,
   energyRestoreStep: 10,
@@ -75,15 +80,34 @@ export const SHIELD = {
   thicknessFrac: 0.028,
   rotateSpeed: 3.35,
   pointerLerp: 18,
+  /** Touch swipe: radians per CSS pixel. Finger can stay on the bezel. */
+  touchSteerPerPx: 0.016,
   coreHitDamage: 9,
   eliteHitDamage: 16,
   mismatchDamage: 6,
   chainHeal: 1.6,
   burstDuration: 0.42,
-  burstCooldown: 7.4,
+  burstCooldown: 6.6,
   burstArcScale: 2.15,
   burstRadiusBoostFrac: 0.045,
   burstDeflectPaddingFrac: 0.06,
+  growDuration: 2.8,
+  growRadiusScale: 1.52,
+  growArcScale: 1.85,
+  spinDuration: 1.15,
+  spinSpeed: 16,
+  shotCount: 5,
+  shotSpread: 0.42,
+  shotSpeed: 1.05,
+};
+
+export const POWERS = ["burst", "grow", "shot", "spin"];
+
+export const POWER_LABELS = {
+  burst: "BURST",
+  grow: "GROW",
+  shot: "SHOT",
+  spin: "SPIN",
 };
 
 export const CORE = {

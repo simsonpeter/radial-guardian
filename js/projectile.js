@@ -26,6 +26,7 @@ export class Projectile {
     this.hitLock = 0;
     this.trail = [];
     this.spin = 0;
+    this.playerShot = false;
   }
 
   spawn(opts) {
@@ -46,6 +47,8 @@ export class Projectile {
     this.hitLock = 0;
     this.trail.length = 0;
     this.spin = rand(0, Math.PI * 2);
+    this.playerShot = Boolean(opts.playerShot);
+    if (this.playerShot) this.deflected = true;
   }
 
   kill() {

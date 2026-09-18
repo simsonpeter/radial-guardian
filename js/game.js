@@ -79,7 +79,7 @@ export class Game {
     this.ui.onRestart = () => this.startRun();
     this.ui.onMenu = () => this.toMenu();
     this.ui.onBurst = () => {
-      if (this.state === STATES.PLAYING) this.tryBurst();
+      if (this.state === STATES.PLAYING) this.tryPower();
     };
     this.ui.onContinueAd = () => this.watchAdForContinue();
     this.ui.setHighScore(this.best);
@@ -150,7 +150,9 @@ export class Game {
     this.state = STATES.PLAYING;
     this.audio.unlock();
     this.ui.showPlaying();
-    this.ui.toastMessage("STAGE 1 — HOLD THE CORE");
+    this.ui.updateHud(this._hudStats(false));
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    this.ui.toastMessage(touch ? "STAGE 1 — HOLD ◀ ▶ TO SPIN" : "STAGE 1 — HOLD THE CORE");
   }
 
   pause() {
@@ -205,7 +207,7 @@ export class Game {
     }
     this.state = STATES.OVER;
     this.ui.showGameOver(this._overStats());
-    this.ui.toastMessage("NO REWARD — AD NOT COMPLETED");
+    this.ui.toastMessage(this.ads.lastError || "NO AD AVAILABLE — TRY AGAIN");
   }
 
   continueRun() {
@@ -214,6 +216,9 @@ export class Game {
     this.shield.energy = energy;
     this.shield.warnFlash = 0;
     this.shield.burstCooldown = 0;
+    this.shield.growTimer = 0;
+    this.shield.spinTimer = 0;
+    this.shield.burstTimer = 0;
     this._warnLatch = false;
     this.combo = 1;
     this.comboTimer = 0;
@@ -230,15 +235,7 @@ export class Game {
     this.lastTs = performance.now();
     this.audio.restore();
     this.ui.showPlaying();
-    this.ui.updateHud({
-      score: this.score,
-      time: this.time,
-      combo: this.combo,
-      energy: this.shield.energy,
-      stageLabel: stageLabel(this.stage),
-      burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
-      comboPop: false,
-    });
+    this.ui.updateHud(this._hudStats(false));
     this.ui.toastMessage(`CORE RESTORED — ${Math.round(energy)}% · 10s RECOVERY`);
   }
 
@@ -250,7 +247,7 @@ export class Game {
 
     if (this.state === STATES.PLAYING) {
       if (this.input.consumePause()) this.pause();
-      else if (this.input.consumeBurst()) this.tryBurst();
+      else if (this.input.consumeBurst()) this.tryPower();
       this.update(dt);
     } else {
       if (this.state === STATES.AD) {
@@ -270,15 +267,17 @@ export class Game {
     this.draw();
   };
 
-  tryBurst() {
-    if (this.shield.tryBurst()) {
+  tryPower() {
+    const power = this.shield.tryPower();
+    if (!power) return;
+    this.flash = Math.max(this.flash, 0.28);
+    this.corePulse = 1;
+    const { cx, cy } = this.layout;
+    if (power === "burst") {
       this.audio.burst();
-      this.flash = Math.max(this.flash, 0.28);
-      this.corePulse = 1;
-      const { cx, cy } = this.layout;
       const r = this.shield.radius(this.layout) + this.layout.burstPadding;
       for (const p of this.projectiles.items) {
-        if (!p.alive || p.deflected) continue;
+        if (!p.alive || p.deflected || p.playerShot) continue;
         const dist = Math.hypot(p.x - cx, p.y - cy);
         if (dist <= r + p.radius) {
           const ang = Math.atan2(p.y - cy, p.x - cx);
@@ -286,7 +285,67 @@ export class Game {
         }
       }
       this.particles.burst(cx, cy, ENERGY_COLORS.cyan, 1.4);
+      this.ui.toastMessage("BURST — CLEAR THE RING");
+      return;
     }
+    if (power === "grow") {
+      this.audio.grow();
+      this.particles.burst(cx, cy, ENERGY_COLORS.green, 1.25);
+      this.ui.toastMessage("GROW — WIDER COVERAGE");
+      return;
+    }
+    if (power === "shot") {
+      this.audio.shot();
+      this._fireShots();
+      this.ui.toastMessage("SHOT — OUTBOUND FIRE");
+      return;
+    }
+    if (power === "spin") {
+      this.audio.spin();
+      this.particles.burst(cx, cy, ENERGY_COLORS.magenta, 1.2);
+      this.ui.toastMessage("SPIN — FULL SWEEP");
+    }
+    this.ui.updateHud(this._hudStats(this.comboAnim > 0.2));
+  }
+
+  _fireShots() {
+    const { cx, cy, arena, projectileRadius } = this.layout;
+    const r = this.shield.radius(this.layout);
+    const n = SHIELD.shotCount;
+    const speed = arena * SHIELD.shotSpeed;
+    for (let i = 0; i < n; i++) {
+      const t = n <= 1 ? 0 : i / (n - 1) - 0.5;
+      const ang = this.shield.angle + t * SHIELD.shotSpread;
+      this.projectiles.spawn({
+        x: cx + Math.cos(ang) * r,
+        y: cy + Math.sin(ang) * r,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        color: ENERGY_COLORS.cyan,
+        radius: projectileRadius * 0.92,
+        playerShot: true,
+      });
+    }
+    this.particles.spawn(cx + Math.cos(this.shield.angle) * r, cy + Math.sin(this.shield.angle) * r, 16, ENERGY_COLORS.cyan, 280, {
+      angle: this.shield.angle,
+      spread: 0.7,
+      spark: true,
+      size: 2.2,
+    });
+  }
+
+  _hudStats(comboPop) {
+    return {
+      score: this.score,
+      time: this.time,
+      combo: this.combo,
+      energy: this.shield.energy,
+      stageLabel: stageLabel(this.stage),
+      burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
+      powerLabel: this.shield.nextPowerLabel,
+      powerId: this.shield.nextPower,
+      comboPop,
+    };
   }
 
   currentSpeed() {
@@ -364,15 +423,7 @@ export class Game {
       this._warnLatch = false;
     }
 
-    this.ui.updateHud({
-      score: this.score,
-      time: this.time,
-      combo: this.combo,
-      energy: this.shield.energy,
-      stageLabel: stageLabel(this.stage),
-      burstCooldownNorm: this.shield.burstCooldown / SHIELD.burstCooldown,
-      comboPop: this.comboAnim > 0.2,
-    });
+    this.ui.updateHud(this._hudStats(this.comboAnim > 0.2));
   }
 
   _spawnWave() {
@@ -528,9 +579,15 @@ export class Game {
       for (let j = 0; j < items.length; j++) {
         if (i === j) continue;
         const b = items[j];
-        if (!b.alive) continue;
+        if (!b.alive || b.playerShot) continue;
         const rad = (a.radius + b.radius) * PROJECTILE.chainHitRadiusScale;
         if (hypot2(a.x - b.x, a.y - b.y) > rad * rad) continue;
+
+        if (a.playerShot) {
+          if (b.deflected) continue;
+          this._shotHit(a, b);
+          break;
+        }
 
         if (a.color.id === b.color.id) {
           this._chainHit(a, b);
@@ -540,6 +597,24 @@ export class Game {
         break;
       }
     }
+  }
+
+  _shotHit(shot, inbound) {
+    const mx = inbound.x;
+    const my = inbound.y;
+    this.deflections += 1;
+    const mul = Math.max(1, Math.floor(this.combo));
+    const pts = SCORE.deflection * mul;
+    this.score += pts;
+    this.combo += 0.35;
+    this.comboTimer = 0;
+    this.comboAnim = 1;
+    this.shield.heal(SHIELD.chainHeal * 0.5);
+    this.audio.deflect();
+    this.particles.burst(mx, my, inbound.color, 0.95);
+    this.particles.floatText(mx, my, `+${formatScore(pts)}`, inbound.color.hex, 0.95);
+    inbound.kill();
+    shot.hitLock = 0.04;
   }
 
   _chainHit(a, b) {

@@ -17,7 +17,9 @@ export class UI {
     this.energyLabel = document.getElementById("hud-energy-value");
     this.stageEl = document.getElementById("hud-stage");
     this.burstBtn = document.getElementById("burst-btn");
+    this.burstLabel = this.burstBtn.querySelector("strong");
     this.burstCd = document.getElementById("burst-cd");
+    this.steerPad = document.getElementById("steer-pad");
     this.toast = document.getElementById("toast");
     this.startScreen = document.getElementById("screen-start");
     this.pauseScreen = document.getElementById("screen-pause");
@@ -122,15 +124,19 @@ export class UI {
     this.hud.classList.toggle("hidden", name !== null && name !== "pause");
     if (name === "pause") this.hud.classList.remove("hidden");
     if (name === "start" || name === "over") this.hud.classList.add("hidden");
-    this.burstBtn.classList.toggle("hidden", name !== null && name !== "pause");
-    if (name === "start" || name === "over") this.burstBtn.classList.add("hidden");
+    this._setCombatControls(name === null || name === "pause");
     if (name === null) {
       this.startScreen.classList.add("hidden");
       this.pauseScreen.classList.add("hidden");
       this.overScreen.classList.add("hidden");
       this.hud.classList.remove("hidden");
-      this.burstBtn.classList.remove("hidden");
+      this._setCombatControls(true);
     }
+  }
+
+  _setCombatControls(visible) {
+    this.burstBtn.classList.toggle("hidden", !visible);
+    this.steerPad?.classList.toggle("hidden", !visible);
   }
 
   showPlaying() {
@@ -150,9 +156,16 @@ export class UI {
     this.comboEl.classList.toggle("is-max", combo >= 6);
     this.comboEl.classList.toggle("is-pop", Boolean(stats.comboPop));
     const cd = stats.burstCooldownNorm;
+    const powerId = stats.powerId || "burst";
+    const powerLabel = stats.powerLabel || "BURST";
     this.burstBtn.classList.toggle("is-ready", cd <= 0);
+    this.burstBtn.classList.toggle("is-grow", powerId === "grow");
+    this.burstBtn.classList.toggle("is-shot", powerId === "shot");
+    this.burstBtn.classList.toggle("is-spin", powerId === "spin");
     this.burstCd.style.setProperty("--cd", String(cd));
     this.burstBtn.setAttribute("aria-disabled", cd > 0 ? "true" : "false");
+    this.burstBtn.setAttribute("aria-label", `Shield ${powerLabel}`);
+    if (this.burstLabel) this.burstLabel.textContent = powerLabel;
   }
 
   showGameOver(stats) {
@@ -194,7 +207,7 @@ export class UI {
     this.pauseScreen.classList.add("hidden");
     this.overScreen.classList.add("hidden");
     this.hud.classList.add("hidden");
-    this.burstBtn.classList.add("hidden");
+    this._setCombatControls(false);
   }
 
   setContinueBusy(busy) {

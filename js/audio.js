@@ -148,6 +148,24 @@ export class AudioEngine {
     this._osc("triangle", 480, 0.16, 0.08, 0.004);
   }
 
+  grow() {
+    this._osc("sine", 180, 0.22, 0.1, 0.005);
+    this._osc("triangle", 320, 0.28, 0.09, 0.008);
+    this._osc("sine", 540, 0.32, 0.07, 0.01);
+  }
+
+  shot() {
+    this._noise(0.08, 0.08, 1400);
+    this._osc("square", 620, 0.1, 0.07, 0.004);
+    this._osc("sawtooth", 880, 0.12, 0.05, 0.006);
+  }
+
+  spin() {
+    this._noise(0.22, 0.1, 700);
+    this._osc("sawtooth", 140, 0.28, 0.09, 0.01);
+    this._osc("triangle", 420, 0.2, 0.07, 0.008);
+  }
+
   gameOver() {
     if (!this.unlocked || !this.ctx) return;
     const notes = [330, 247, 196, 147, 110];

@@ -1,7 +1,6 @@
 /**
  * Rewarded ads for extra-life continues.
- * Uses Google H5 Games Ad Placement when ADS.client is set,
- * otherwise a local preview overlay so the continue flow works offline.
+ * Uses Google H5 Games Ad Placement when ADS.client is set.
  */
 
 import { ADS } from "./config.js";
@@ -15,12 +14,21 @@ export class AdService {
     this._fill = null;
     this._simRaf = 0;
     this._busy = false;
+    this.lastError = "";
   }
 
   init({ muted = false } = {}) {
     this._overlay = document.getElementById("screen-ad");
     this._status = document.getElementById("ad-status");
     this._fill = document.getElementById("ad-progress-fill");
+    this._adBreak = (o) => {
+      const fn = window.adBreak || ((x) => (window.adsbygoogle = window.adsbygoogle || []).push(x));
+      fn(o);
+    };
+    this._adConfig = (o) => {
+      const fn = window.adConfig || ((x) => (window.adsbygoogle = window.adsbygoogle || []).push(x));
+      fn(o);
+    };
     if (ADS.client) this._loadPlacementApi(muted);
   }
 
@@ -34,6 +42,7 @@ export class AdService {
   showRewarded() {
     if (this._busy) return Promise.resolve(false);
     this._busy = true;
+    this.lastError = "";
     const finish = (ok) => {
       this._busy = false;
       this._hideOverlay();
@@ -48,33 +57,31 @@ export class AdService {
 
   _loadPlacementApi(muted) {
     window.adsbygoogle = window.adsbygoogle || [];
-    const push = (o) => {
-      window.adsbygoogle.push(o);
-    };
-    this._adBreak = (o) => push(o);
-    this._adConfig = (o) => push(o);
+    if (!document.querySelector("script[src*='pagead2.googlesyndication.com']")) {
+      const script = document.createElement("script");
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADS.client)}`;
+      if (ADS.testAds) script.dataset.adbreakTest = "on";
+      document.head.appendChild(script);
+    } else if (ADS.testAds) {
+      const existing = document.querySelector("script[src*='pagead2.googlesyndication.com']");
+      existing?.setAttribute("data-adbreak-test", "on");
+    }
 
-    const script = document.createElement("script");
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADS.client)}`;
-    script.dataset.adFrequencyHint = "30s";
-    script.onload = () => {
-      this._adConfig({
-        preloadAdBreaks: "on",
-        sound: muted ? "off" : "on",
-      });
-    };
-    document.head.appendChild(script);
+    this._adConfig({
+      preloadAdBreaks: "on",
+      sound: muted ? "off" : "on",
+    });
   }
 
   _showPlacementReward() {
     return new Promise((resolve) => {
       let settled = false;
-      let started = false;
-      const done = (ok) => {
+      const done = (ok, reason) => {
         if (settled) return;
         settled = true;
+        if (!ok) this.lastError = this._messageForStatus(reason);
         resolve(ok);
       };
 
@@ -85,22 +92,25 @@ export class AdService {
       this._adBreak({
         type: "reward",
         name: "restore-core",
-        beforeAd: () => {
-          started = true;
-          this._hideOverlay();
-        },
+        beforeAd: () => this._hideOverlay(),
         beforeReward: (showAdFn) => showAdFn(),
-        adViewed: () => done(true),
-        adDismissed: () => done(false),
+        adViewed: () => done(true, "viewed"),
+        adDismissed: () => done(false, "dismissed"),
         adBreakDone: (info) => {
-          done(info?.breakStatus === "viewed");
+          const status = info?.breakStatus || "other";
+          done(status === "viewed", status);
         },
       });
-
-      window.setTimeout(() => {
-        if (!started) done(false);
-      }, 8000);
     });
+  }
+
+  _messageForStatus(status) {
+    if (status === "dismissed") return "AD CLOSED — WATCH TO THE END";
+    if (status === "frequencyCapped") return "NO AD YET — TRY AGAIN IN A BIT";
+    if (status === "noAdPreloaded" || status === "timeout" || status === "error" || status === "other") {
+      return "NO AD AVAILABLE — TRY AGAIN";
+    }
+    return "NO AD AVAILABLE — TRY AGAIN";
   }
 
   _showPreview() {

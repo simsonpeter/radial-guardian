@@ -2,7 +2,7 @@
  * Player-controlled energy arc that orbits the core.
  */
 
-import { SHIELD } from "./config.js";
+import { POWER_LABELS, POWERS, SHIELD } from "./config.js";
 import { absAngleDelta, clamp, lerp, wrapAngle } from "./utils.js";
 
 export class Shield {
@@ -11,6 +11,9 @@ export class Shield {
     this.energy = SHIELD.energyMax;
     this.burstTimer = 0;
     this.burstCooldown = 0;
+    this.growTimer = 0;
+    this.spinTimer = 0;
+    this.powerIndex = 0;
     this.impactFlash = 0;
     this.warnFlash = 0;
     this.pulse = 0;
@@ -25,6 +28,9 @@ export class Shield {
     this.energy = SHIELD.energyMax;
     this.burstTimer = 0;
     this.burstCooldown = 0;
+    this.growTimer = 0;
+    this.spinTimer = 0;
+    this.powerIndex = 0;
     this.impactFlash = 0;
     this.warnFlash = 0;
     this.pulse = 0;
@@ -35,25 +41,41 @@ export class Shield {
   }
 
   radius(layout) {
-    return lerp(layout.shieldRadiusMin, layout.shieldRadiusMax, this.energyNorm);
+    let r = lerp(layout.shieldRadiusMin, layout.shieldRadiusMax, this.energyNorm);
+    if (this.burstTimer > 0) r += layout.burstRadiusBoost;
+    if (this.growTimer > 0) r *= SHIELD.growRadiusScale;
+    return r;
   }
 
   arcWidth() {
     const base = lerp(SHIELD.minArc, SHIELD.baseArc, this.energyNorm);
     if (this.burstTimer > 0) return base * SHIELD.burstArcScale;
+    if (this.growTimer > 0) return base * SHIELD.growArcScale;
     return base;
   }
 
-  canBurst() {
+  get nextPower() {
+    return POWERS[this.powerIndex % POWERS.length];
+  }
+
+  get nextPowerLabel() {
+    return POWER_LABELS[this.nextPower];
+  }
+
+  canPower() {
     return this.burstCooldown <= 0 && this.burstTimer <= 0;
   }
 
-  tryBurst() {
-    if (!this.canBurst()) return false;
-    this.burstTimer = SHIELD.burstDuration;
+  tryPower() {
+    if (!this.canPower()) return null;
+    const power = this.nextPower;
+    this.powerIndex = (this.powerIndex + 1) % POWERS.length;
     this.burstCooldown = SHIELD.burstCooldown;
     this.impactFlash = 1;
-    return true;
+    if (power === "burst") this.burstTimer = SHIELD.burstDuration;
+    if (power === "grow") this.growTimer = SHIELD.growDuration;
+    if (power === "spin") this.spinTimer = SHIELD.spinDuration;
+    return power;
   }
 
   damage(amount) {
@@ -72,7 +94,7 @@ export class Shield {
     const dx = x - cx;
     const dy = y - cy;
     const dist = Math.hypot(dx, dy);
-    const r = this.radius(layout) + (this.burstTimer > 0 ? layout.burstRadiusBoost : 0);
+    const r = this.radius(layout);
     const thick = layout.shieldThickness * 0.55 + extraRadius;
     if (Math.abs(dist - r) > thick) return false;
     const ang = Math.atan2(dy, dx);
@@ -86,7 +108,7 @@ export class Shield {
   intersectSegment(px, py, x, y, cx, cy, layout, bodyRadius) {
     const prevDist = Math.hypot(px - cx, py - cy);
     const dist = Math.hypot(x - cx, y - cy);
-    const r = this.radius(layout) + (this.burstTimer > 0 ? layout.burstRadiusBoost : 0);
+    const r = this.radius(layout);
     const pad = layout.shieldThickness * 0.5 + bodyRadius;
 
     const crossedIn = prevDist > r - pad && dist <= r + pad && dist < prevDist;
@@ -109,16 +131,24 @@ export class Shield {
     this.pulse += dt;
     if (this.burstTimer > 0) this.burstTimer = Math.max(0, this.burstTimer - dt);
     if (this.burstCooldown > 0) this.burstCooldown = Math.max(0, this.burstCooldown - dt);
+    if (this.growTimer > 0) this.growTimer = Math.max(0, this.growTimer - dt);
+    if (this.spinTimer > 0) this.spinTimer = Math.max(0, this.spinTimer - dt);
     this.impactFlash = Math.max(0, this.impactFlash - dt * 3.4);
     this.warnFlash = Math.max(0, this.warnFlash - dt * 2.2);
 
-    const rotate = input.rotateIntent();
-    if (rotate !== 0) {
-      this.angle = wrapAngle(this.angle + rotate * SHIELD.rotateSpeed * dt);
-    }
-    if (input.aimingWithPointer) {
-      const k = 1 - Math.exp(-SHIELD.pointerLerp * dt);
-      this.angle = wrapAngle(this.angle + wrapAngle(input.pointerAngle - this.angle) * k);
+    if (this.spinTimer > 0) {
+      this.angle = wrapAngle(this.angle + SHIELD.spinSpeed * dt);
+    } else {
+      const rotate = input.rotateIntent();
+      if (rotate !== 0) {
+        this.angle = wrapAngle(this.angle + rotate * SHIELD.rotateSpeed * dt);
+      }
+      const yaw = input.consumeSteerYaw();
+      if (yaw) this.angle = wrapAngle(this.angle + yaw);
+      if (input.aimingWithPointer) {
+        const k = 1 - Math.exp(-SHIELD.pointerLerp * dt);
+        this.angle = wrapAngle(this.angle + wrapAngle(input.pointerAngle - this.angle) * k);
+      }
     }
 
     const arc = this.arcWidth();
@@ -137,12 +167,26 @@ export class Shield {
     const thick = layout.shieldThickness;
     const warn = this.warnFlash;
     const flash = this.impactFlash;
-    const energyHue = this.energyNorm < 0.34 ? `rgba(255, 90, 60,` : `rgba(0, 243, 255,`;
+    const growing = this.growTimer > 0;
+    const spinning = this.spinTimer > 0;
+    const energyHue = this.energyNorm < 0.34
+      ? `rgba(255, 90, 60,`
+      : growing
+        ? `rgba(57, 255, 136,`
+        : spinning
+          ? `rgba(255, 43, 214,`
+          : `rgba(0, 243, 255,`;
 
     ctx.save();
     if (!reducedMotion) {
-      ctx.shadowColor = warn > 0.05 ? `rgba(255,80,40,${0.55 + warn * 0.4})` : `rgba(0,243,255,${0.45 + flash * 0.5})`;
-      ctx.shadowBlur = 18 + flash * 24;
+      ctx.shadowColor = warn > 0.05
+        ? `rgba(255,80,40,${0.55 + warn * 0.4})`
+        : growing
+          ? `rgba(57,255,136,${0.5 + flash * 0.4})`
+          : spinning
+            ? `rgba(255,43,214,${0.55 + flash * 0.4})`
+            : `rgba(0,243,255,${0.45 + flash * 0.5})`;
+      ctx.shadowBlur = 18 + flash * 24 + (growing ? 10 : 0) + (spinning ? 8 : 0);
     }
 
     ctx.lineCap = "round";
@@ -152,7 +196,7 @@ export class Shield {
     ctx.arc(cx, cy, r, a0, a1);
     ctx.stroke();
 
-    ctx.strokeStyle = warn > 0.25 ? "#ff8a4a" : "#7afcff";
+    ctx.strokeStyle = warn > 0.25 ? "#ff8a4a" : growing ? "#39ff88" : spinning ? "#ff2bd6" : "#7afcff";
     ctx.lineWidth = thick * 0.7;
     ctx.beginPath();
     ctx.arc(cx, cy, r, a0, a1);
@@ -171,7 +215,7 @@ export class Shield {
     ctx.strokeStyle = `rgba(180, 255, 255, ${0.35 + flash * 0.4})`;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 10]);
-    ctx.lineDashOffset = reducedMotion ? 0 : -this.pulse * 80;
+    ctx.lineDashOffset = reducedMotion ? 0 : -this.pulse * (spinning ? 220 : 80);
     ctx.beginPath();
     ctx.arc(cx, cy, r + ripple * r, a0, a1);
     ctx.stroke();

@@ -20,9 +20,9 @@
     "path": "./android.keystore",
     "alias": "android"
   },
-  "appVersion": "1",
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersion": "1.1",
+  "appVersionName": "1.1",
+  "appVersionCode": 2,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://radial-guardian.vercel.app/manifest.json",
