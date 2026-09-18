@@ -19,7 +19,7 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css?v=6" />
+    <link rel="stylesheet" href="style.css?v=7" />
     <link rel="icon" href="icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script
@@ -83,20 +83,22 @@
         SOUND ON
       </button>
 
-      <div id="steer-pad" class="steer-pad hidden" aria-label="Shield rotate">
-        <button id="steer-left" class="steer-btn" type="button" aria-label="Rotate left">◀</button>
-        <button id="steer-right" class="steer-btn" type="button" aria-label="Rotate right">▶</button>
-        <button id="speed-btn" class="speed-btn" type="button" aria-label="Spin speed">
+      <div id="combat-dock" class="combat-dock hidden">
+        <div id="steer-pad" class="steer-pad" aria-label="Shield rotate">
+          <button id="steer-left" class="steer-btn" type="button" aria-label="Rotate left">◀</button>
+          <button id="steer-right" class="steer-btn" type="button" aria-label="Rotate right">▶</button>
+        </div>
+        <button id="speed-btn" class="speed-btn" type="button" aria-label="Spin speed — press harder to go faster">
+          <span id="speed-fill"></span>
           <strong>SPEED</strong>
-          <small id="speed-value">x1</small>
+          <small id="speed-value">x1.0</small>
+        </button>
+        <button id="burst-btn" class="burst-btn" type="button" aria-label="Shield BURST">
+          <span id="burst-cd"></span>
+          <strong>BURST</strong>
+          <small>SPACE</small>
         </button>
       </div>
-
-      <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield BURST">
-        <span id="burst-cd"></span>
-        <strong>BURST</strong>
-        <small>SPACE</small>
-      </button>
 
       <div id="toast" class="toast" role="status"></div>
 
@@ -121,8 +123,8 @@
             </div>
             <div>
               <h2>MOBILE</h2>
-              <p>HOLD ◀ ▶ at the bottom to spin — thumbs stay off the arena</p>
-              <p>SPEED sets how fast the shield spins</p>
+              <p>HOLD ◀ ▶ at the bottom to spin</p>
+              <p>HOLD SPEED — press harder or slide up to spin faster</p>
               <p>POWER button cycles specials</p>
             </div>
           </div>

@@ -19,6 +19,7 @@ export class UI {
     this.burstBtn = document.getElementById("burst-btn");
     this.burstLabel = this.burstBtn.querySelector("strong");
     this.burstCd = document.getElementById("burst-cd");
+    this.combatDock = document.getElementById("combat-dock");
     this.steerPad = document.getElementById("steer-pad");
     this.speedBtn = document.getElementById("speed-btn");
     this.speedValue = document.getElementById("speed-value");
@@ -37,7 +38,6 @@ export class UI {
     this.onRestart = null;
     this.onMenu = null;
     this.onBurst = null;
-    this.onSpeed = null;
     this.onContinueAd = null;
     this.onMuteChange = null;
     this.reducedMotion = storageGet(STORAGE_KEYS.reducedMotion) === "1";
@@ -82,12 +82,6 @@ export class UI {
       e.preventDefault();
       this.audio.unlock();
       this.onBurst?.();
-    });
-    this.speedBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.audio.unlock();
-      this.audio.click();
-      this.onSpeed?.();
     });
     this.muteBtn.addEventListener("click", () => {
       this.audio.unlock();
@@ -144,8 +138,7 @@ export class UI {
   }
 
   _setCombatControls(visible) {
-    this.burstBtn.classList.toggle("hidden", !visible);
-    this.steerPad?.classList.toggle("hidden", !visible);
+    this.combatDock?.classList.toggle("hidden", !visible);
   }
 
   setSpeedLabel(label) {

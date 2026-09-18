@@ -225,7 +225,7 @@ body.is-booting .screen:not(.splash) {
 .hud-bottom {
   position: absolute;
   left: 50%;
-  bottom: max(18px, env(safe-area-inset-bottom));
+  bottom: calc(118px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   width: min(420px, calc(100% - 32px));
   display: flex;
@@ -332,11 +332,35 @@ body.is-booting .screen:not(.splash) {
   left: auto;
 }
 
-.burst-btn {
+.combat-dock {
   position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(18px, env(safe-area-inset-bottom));
-  z-index: 7;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(5, 8, 20, 0.92) 55%, rgba(5, 8, 20, 0));
+  pointer-events: none;
+}
+
+.combat-dock.hidden {
+  display: none !important;
+}
+
+.combat-dock > * {
+  pointer-events: auto;
+}
+
+.burst-btn {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 1;
+  flex: 0 0 auto;
   width: 84px;
   height: 84px;
   border-radius: 50%;
@@ -352,10 +376,10 @@ body.is-booting .screen:not(.splash) {
 }
 
 .steer-pad {
-  position: fixed;
-  left: max(12px, env(safe-area-inset-left));
-  bottom: max(18px, env(safe-area-inset-bottom));
-  z-index: 7;
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: 1;
   display: flex;
   gap: 8px;
   pointer-events: auto;
@@ -394,10 +418,11 @@ body.is-booting .screen:not(.splash) {
   left: auto;
   bottom: auto;
   transform: none;
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
-  border: 1px solid var(--stroke);
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
   background: var(--glass);
   color: var(--text);
   font-family: var(--font-display);
@@ -405,8 +430,20 @@ body.is-booting .screen:not(.splash) {
   backdrop-filter: blur(12px);
   display: grid;
   place-items: center;
+  overflow: hidden;
   touch-action: none;
   user-select: none;
+  box-shadow: 0 0 18px rgba(0, 243, 255, 0.28);
+}
+
+#speed-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--force, 0) * 100%);
+  background: linear-gradient(to top, rgba(0, 243, 255, 0.55), rgba(0, 243, 255, 0.12));
+  pointer-events: none;
 }
 
 .speed-btn strong {
@@ -851,25 +888,25 @@ button.mute-btn {
   }
 
   .burst-btn {
-    width: 76px;
-    height: 76px;
+    width: 72px;
+    height: 72px;
   }
 
   .steer-btn {
-    width: 64px;
-    height: 64px;
+    width: 58px;
+    height: 58px;
   }
 
   .speed-btn {
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
   }
 
   .hud-bottom {
-    width: min(360px, calc(100% - 32px));
+    width: min(360px, calc(100% - 24px));
     left: 50%;
     transform: translateX(-50%);
-    bottom: max(102px, calc(env(safe-area-inset-bottom) + 88px));
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px));
   }
 }
 

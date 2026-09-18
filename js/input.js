@@ -1,9 +1,9 @@
 /**
  * Unified pointer / keyboard / touch input.
- * Desktop: mouse aims the shield. Mobile: hold ◀ ▶ or swipe — no finger on the arena.
+ * Desktop: mouse aims. Mobile: ◀ ▶ to spin, hold SPEED harder / slide up to go faster.
  */
 
-import { SHIELD, STEER_SPEED_LABELS, STEER_SPEEDS, STORAGE_KEYS } from "./config.js";
+import { SHIELD } from "./config.js";
 import { clamp, wrapAngle } from "./utils.js";
 
 export class Input {
@@ -19,11 +19,15 @@ export class Input {
     this.confirmQueued = false;
     this.steerHold = 0;
     this.steerYaw = 0;
-    this.speedIndex = loadSpeedIndex();
+    this.speedForce = 0;
+    this.steerForce = 0;
     this._lastPointerId = null;
     this._touchId = null;
     this._lastTouchX = 0;
     this._steerIds = new Map();
+    this._speedId = null;
+    this._speedOriginY = 0;
+    this._forceBtn = null;
 
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
@@ -34,6 +38,8 @@ export class Input {
     this._onTouchMove = this._onTouchMove.bind(this);
     this._onSteerDown = this._onSteerDown.bind(this);
     this._onSteerUp = this._onSteerUp.bind(this);
+    this._onSpeedDown = this._onSpeedDown.bind(this);
+    this._onSpeedUp = this._onSpeedUp.bind(this);
   }
 
   attach() {
@@ -50,6 +56,8 @@ export class Input {
 
     this._leftBtn = document.getElementById("steer-left");
     this._rightBtn = document.getElementById("steer-right");
+    this._speedBtn = document.getElementById("speed-btn");
+    this._speedValue = document.getElementById("speed-value");
     for (const btn of [this._leftBtn, this._rightBtn]) {
       if (!btn) continue;
       btn.addEventListener("pointerdown", this._onSteerDown);
@@ -57,6 +65,13 @@ export class Input {
       btn.addEventListener("pointercancel", this._onSteerUp);
       btn.addEventListener("lostpointercapture", this._onSteerUp);
     }
+    if (this._speedBtn) {
+      this._speedBtn.addEventListener("pointerdown", this._onSpeedDown);
+      this._speedBtn.addEventListener("pointerup", this._onSpeedUp);
+      this._speedBtn.addEventListener("pointercancel", this._onSpeedUp);
+      this._speedBtn.addEventListener("lostpointercapture", this._onSpeedUp);
+    }
+    this._paintSpeed();
   }
 
   detach() {
@@ -76,6 +91,12 @@ export class Input {
       btn.removeEventListener("pointerup", this._onSteerUp);
       btn.removeEventListener("pointercancel", this._onSteerUp);
       btn.removeEventListener("lostpointercapture", this._onSteerUp);
+    }
+    if (this._speedBtn) {
+      this._speedBtn.removeEventListener("pointerdown", this._onSpeedDown);
+      this._speedBtn.removeEventListener("pointerup", this._onSpeedUp);
+      this._speedBtn.removeEventListener("pointercancel", this._onSpeedUp);
+      this._speedBtn.removeEventListener("lostpointercapture", this._onSpeedUp);
     }
   }
 
@@ -104,21 +125,12 @@ export class Input {
   }
 
   get speedMul() {
-    return STEER_SPEEDS[this.speedIndex] || 1;
+    const force = Math.max(this.speedForce, this.steerForce);
+    return 1 + force * (SHIELD.steerMaxMul - 1);
   }
 
   get speedLabel() {
-    return STEER_SPEED_LABELS[this.speedIndex] || "x1";
-  }
-
-  cycleSpeed() {
-    this.speedIndex = (this.speedIndex + 1) % STEER_SPEEDS.length;
-    try {
-      localStorage.setItem(STORAGE_KEYS.steerSpeed, String(this.speedIndex));
-    } catch {
-      /* ignore */
-    }
-    return this.speedMul;
+    return `x${this.speedMul.toFixed(1)}`;
   }
 
   get aimingWithPointer() {
@@ -139,6 +151,45 @@ export class Input {
     this.steerHold = clamp(dir, -1, 1);
     this._leftBtn?.classList.toggle("is-held", this.steerHold < 0);
     this._rightBtn?.classList.toggle("is-held", this.steerHold > 0);
+    if (this._steerIds.size === 0) {
+      this.steerForce = 0;
+      this._paintSpeed();
+    }
+  }
+
+  _pressForce(e, btn) {
+    let force = 0.22;
+    const size = Math.max(e.width || 0, e.height || 0);
+    if (size > 18) force = Math.max(force, clamp((size - 16) / 52, 0, 1));
+    const p = e.pressure;
+    if (typeof p === "number" && p > 0 && (p < 0.42 || p > 0.58)) {
+      force = Math.max(force, p);
+    } else if (p >= 0.95) {
+      force = Math.max(force, 1);
+    }
+    if (this._speedId != null && this._speedOriginY) {
+      const lift = clamp((this._speedOriginY - e.clientY) / 56, 0, 1);
+      force = Math.max(force, 0.22 + lift * 0.78);
+    } else if (btn) {
+      const r = btn.getBoundingClientRect();
+      if (r.height > 0) {
+        const fromBottom = clamp((r.bottom - e.clientY) / r.height, 0, 1);
+        force = Math.max(force, fromBottom * 0.85);
+      }
+    }
+    return clamp(force, 0, 1);
+  }
+
+  _paintSpeed() {
+    const mul = this.speedMul;
+    const force = Math.max(this.speedForce, this.steerForce);
+    if (this._speedBtn) {
+      this._speedBtn.style.setProperty("--force", String(force));
+      this._speedBtn.classList.toggle("is-held", this._speedId != null);
+      this._speedBtn.classList.toggle("is-fast", mul >= 1.8 && mul < 2.7);
+      this._speedBtn.classList.toggle("is-max", mul >= 2.7);
+    }
+    if (this._speedValue) this._speedValue.textContent = `x${mul.toFixed(1)}`;
   }
 
   _onSteerDown(e) {
@@ -147,7 +198,10 @@ export class Input {
     e.stopPropagation();
     const dir = e.currentTarget.id === "steer-left" ? -1 : 1;
     this._steerIds.set(e.pointerId, dir);
+    this._forceBtn = e.currentTarget;
+    this.steerForce = this._pressForce(e, e.currentTarget);
     this._syncSteerHold();
+    this._paintSpeed();
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -158,7 +212,31 @@ export class Input {
   _onSteerUp(e) {
     if (!this._steerIds.has(e.pointerId)) return;
     this._steerIds.delete(e.pointerId);
+    if (this._forceBtn && e.currentTarget === this._forceBtn) this._forceBtn = null;
     this._syncSteerHold();
+  }
+
+  _onSpeedDown(e) {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    this._speedId = e.pointerId;
+    this._speedOriginY = e.clientY;
+    this.speedForce = this._pressForce(e, this._speedBtn);
+    this._paintSpeed();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  _onSpeedUp(e) {
+    if (this._speedId !== e.pointerId) return;
+    this._speedId = null;
+    this._speedOriginY = 0;
+    this.speedForce = 0;
+    this._paintSpeed();
   }
 
   _preventScroll(e) {
@@ -180,10 +258,19 @@ export class Input {
     if ((key === " " || key === "spacebar") && tag !== "BUTTON") this.burstQueued = true;
     if (key === "escape" || key === "p") this.pauseQueued = true;
     if (key === "enter" && tag !== "BUTTON" && tag !== "INPUT") this.confirmQueued = true;
+    if (key === "shift") {
+      this.speedForce = Math.max(this.speedForce, 0.85);
+      this._paintSpeed();
+    }
   }
 
   _onKeyUp(e) {
-    this.keys.delete(e.key.toLowerCase());
+    const key = e.key.toLowerCase();
+    this.keys.delete(key);
+    if (key === "shift" && this._speedId == null) {
+      this.speedForce = 0;
+      this._paintSpeed();
+    }
   }
 
   _setAngleFromEvent(e) {
@@ -197,7 +284,7 @@ export class Input {
   }
 
   _onPointerDown(e) {
-    if (e.target.closest && e.target.closest("button, input, .screen, .steer-pad")) return;
+    if (e.target.closest && e.target.closest("button, input, .screen, .steer-pad, .combat-dock")) return;
     this._lastPointerId = e.pointerId;
     if (e.pointerType === "mouse") {
       this._setAngleFromEvent(e);
@@ -219,6 +306,16 @@ export class Input {
   }
 
   _onPointerMove(e) {
+    if (this._speedId === e.pointerId) {
+      this.speedForce = this._pressForce(e, this._speedBtn);
+      this._paintSpeed();
+      return;
+    }
+    if (this._steerIds.has(e.pointerId)) {
+      this.steerForce = this._pressForce(e, this._forceBtn);
+      this._paintSpeed();
+      return;
+    }
     if (e.pointerType === "mouse") {
       this._setAngleFromEvent(e);
       return;
@@ -231,15 +328,7 @@ export class Input {
   _onPointerUp(e) {
     if (this._lastPointerId === e.pointerId) this._lastPointerId = null;
     if (this._touchId === e.pointerId) this._touchId = null;
+    if (this._speedId === e.pointerId) this._onSpeedUp(e);
+    if (this._steerIds.has(e.pointerId)) this._onSteerUp(e);
   }
-}
-
-function loadSpeedIndex() {
-  try {
-    const n = Number(localStorage.getItem(STORAGE_KEYS.steerSpeed));
-    if (Number.isInteger(n) && n >= 0 && n < STEER_SPEEDS.length) return n;
-  } catch {
-    /* ignore */
-  }
-  return 0;
 }

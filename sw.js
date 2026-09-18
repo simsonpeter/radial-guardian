@@ -1,4 +1,4 @@
-const CACHE = "radial-guardian-v6";
+const CACHE = "radial-guardian-v7";
 const ASSETS = [
   "./",
   "./index.html",

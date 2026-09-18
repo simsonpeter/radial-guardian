@@ -8,7 +8,6 @@ export const STORAGE_KEYS = {
   muted: "radialDefense.muted",
   volume: "radialDefense.volume",
   reducedMotion: "radialDefense.reducedMotion",
-  steerSpeed: "radialDefense.steerSpeed",
 };
 
 export const ENERGY_COLORS = {
@@ -83,6 +82,8 @@ export const SHIELD = {
   pointerLerp: 18,
   /** Touch swipe: radians per CSS pixel. Finger can stay on the bezel. */
   touchSteerPerPx: 0.016,
+  /** SPEED hold: light press stays near 1x, harder press reaches this. */
+  steerMaxMul: 3.4,
   coreHitDamage: 9,
   eliteHitDamage: 16,
   mismatchDamage: 6,
@@ -101,10 +102,6 @@ export const SHIELD = {
   shotSpread: 0.42,
   shotSpeed: 1.05,
 };
-
-/** Multipliers for ◀ ▶ / swipe / SPIN. Tap SPEED to cycle. */
-export const STEER_SPEEDS = [1, 2, 3.2];
-export const STEER_SPEED_LABELS = ["x1", "x2", "x3"];
 
 export const POWERS = ["burst", "grow", "shot", "spin"];
 
