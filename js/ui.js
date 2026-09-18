@@ -146,7 +146,6 @@ export class UI {
   _setCombatControls(visible) {
     this.burstBtn.classList.toggle("hidden", !visible);
     this.steerPad?.classList.toggle("hidden", !visible);
-    this.speedBtn?.classList.toggle("hidden", !visible);
   }
 
   setSpeedLabel(label) {

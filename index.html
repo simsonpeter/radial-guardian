@@ -19,7 +19,7 @@
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css?v=5" />
+    <link rel="stylesheet" href="style.css?v=6" />
     <link rel="icon" href="icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script
@@ -86,12 +86,11 @@
       <div id="steer-pad" class="steer-pad hidden" aria-label="Shield rotate">
         <button id="steer-left" class="steer-btn" type="button" aria-label="Rotate left">◀</button>
         <button id="steer-right" class="steer-btn" type="button" aria-label="Rotate right">▶</button>
+        <button id="speed-btn" class="speed-btn" type="button" aria-label="Spin speed">
+          <strong>SPEED</strong>
+          <small id="speed-value">x1</small>
+        </button>
       </div>
-
-      <button id="speed-btn" class="speed-btn hidden" type="button" aria-label="Spin speed">
-        <strong>SPEED</strong>
-        <small id="speed-value">x1</small>
-      </button>
 
       <button id="burst-btn" class="burst-btn hidden" type="button" aria-label="Shield BURST">
         <span id="burst-cd"></span>
