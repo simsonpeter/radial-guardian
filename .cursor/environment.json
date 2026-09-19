@@ -1,0 +1,17 @@
+{
+  "name": "Radial Guardian",
+  "install": "python3 --version && node --version",
+  "terminals": [
+    {
+      "name": "web",
+      "command": "python3 -m http.server 43127",
+      "description": "Static file server for the Radial Guardian PWA. Open http://localhost:43127 to play. No build step or backend is required."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 43127
+    }
+  ]
+}
